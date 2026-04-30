@@ -2331,13 +2331,52 @@ async function openGoogleDrivePicker(){
   try{
     await loadGoogleApis();
     const token=await getGoogleToken();
-    const view=new google.picker.DocsView()
+    // Tipos MIME amplos: imagens (JPEG, PNG, GIF, WebP, HEIC, BMP, TIFF) + vídeos (MP4, MOV, AVI, WMV, WebM, MKV, MPEG, 3GP, FLV)
+    const ALL_MIMES='image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,image/bmp,image/tiff,image/svg+xml,video/mp4,video/quicktime,video/x-msvideo,video/x-ms-wmv,video/webm,video/x-matroska,video/mpeg,video/3gpp,video/x-flv,video/avi';
+    const VIDEO_MIMES='video/mp4,video/quicktime,video/x-msvideo,video/x-ms-wmv,video/webm,video/x-matroska,video/mpeg,video/3gpp,video/x-flv,video/avi';
+    const IMAGE_MIMES='image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,image/bmp,image/tiff,image/svg+xml';
+
+    // View "Todos os arquivos" — tudo do Meu Drive (imagens + vídeos)
+    const allView=new google.picker.DocsView(google.picker.ViewId.DOCS)
       .setIncludeFolders(true)
-      .setMimeTypes('image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/avi,video/mov')
-      .setSelectFolderEnabled(false);
+      .setOwnedByMe(true)
+      .setMimeTypes(ALL_MIMES)
+      .setSelectFolderEnabled(false)
+      .setLabel('Meu Drive');
+
+    // View "Vídeos"
+    const videoView=new google.picker.DocsView(google.picker.ViewId.DOCS_VIDEOS)
+      .setIncludeFolders(true)
+      .setMimeTypes(VIDEO_MIMES)
+      .setLabel('Vídeos');
+
+    // View "Imagens"
+    const imageView=new google.picker.DocsView(google.picker.ViewId.DOCS_IMAGES)
+      .setIncludeFolders(true)
+      .setMimeTypes(IMAGE_MIMES)
+      .setLabel('Imagens');
+
+    // View "Compartilhados comigo"
+    const sharedView=new google.picker.DocsView(google.picker.ViewId.DOCS)
+      .setIncludeFolders(true)
+      .setOwnedByMe(false)
+      .setMimeTypes(ALL_MIMES)
+      .setEnableDrives(true)
+      .setLabel('Compartilhados');
+
+    // View "Recentes"
+    const recentView=new google.picker.DocsView(google.picker.ViewId.RECENTLY_PICKED)
+      .setMimeTypes(ALL_MIMES)
+      .setLabel('Recentes');
+
     const picker=new google.picker.PickerBuilder()
-      .addView(view)
-      .addView(new google.picker.DocsView().setMimeTypes('video/mp4,video/quicktime,video/mov').setLabel('Vídeos'))
+      .addView(allView)
+      .addView(videoView)
+      .addView(imageView)
+      .addView(sharedView)
+      .addView(recentView)
+      .enableFeature(google.picker.Feature.SUPPORT_DRIVES)
+      .enableFeature(google.picker.Feature.MINE_ONLY)
       .setOAuthToken(token)
       .setDeveloperKey(gs.googleApiKey)
       .setCallback(googlePickerCallback)
