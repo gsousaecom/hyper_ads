@@ -241,7 +241,7 @@ const acctStatus = s => s === 1 ? '🟢' : s === 2 ? '🔴' : s ? '🟡' : '';
 // ── State ──────────────────────────────────────────────────────────────────
 let S = {
   view:'login', sub:'launch',
-  apiVersion:'v21.0', token:'', appId:'', profile:null,
+  apiVersion:(JSON.parse(localStorage.getItem('globalSettings')||'{}').apiVersion)||'v21.0', token:'', appId:'', profile:null,
   bms:[], personalAccounts:[], selectedAccount:null, pages:[],
   campaigns:[], campaignsLoading:false, campaignToggling:{}, campaignSearch:'', campaignFilter:'all',
   connLogs:[], connecting:false,
@@ -270,7 +270,7 @@ let S = {
   creativeFilter:{ type:'all', campaign:'all', sortBy:'spend', sortDir:'desc', search:'' },
   shopify:{ orders:[], products:[], shop:null, loading:false, lastSync:null, error:null },
   rulesEvaluating:false, rulesResults:[],
-  campaignEditor:{expandedId:null,adsets:[],adsetsLoading:false,expandedAdsetId:null,ads:[],adsLoading:false,editingCampaign:null,editingAdset:null,newAdsetForm:null,savingCampaign:false,savingAdset:false,creatingAdset:false,savingAd:false},
+  campaignEditor:{expandedId:null,adsets:[],adsetsLoading:false,expandedAdsetId:null,ads:[],adsLoading:false,editingCampaign:null,editingAdset:null,newAdsetForm:null,savingCampaign:false,savingAdset:false,creatingAdset:false,savingAd:false,subWizard:null,subWizardSnapshot:null},
   darkMode: JSON.parse(localStorage.getItem('darkMode')||'false'),
   sidebarOpen: false,
 };
@@ -1888,6 +1888,84 @@ function renderS3ForAdset(si){
   return headerBar+pageCard+globalCard+mediaCard+copyCard+adLevelCardLocal;
 }
 
+// Wizard de criação de novo conjunto em campanha existente
+function renderSubAdsetWizard(){
+  const w=S.campaignEditor.subWizard;if(!w)return '';
+  const c=w.campaign;
+  const STEPS=['Conjunto','Anúncio','Publicar'];
+  const step=w.step||0;
+  let body='';
+  if(step===0){body=renderS2();}
+  else if(step===1){body=renderS3(-1);}
+  else if(step===2){body=renderSubAdsetPublishStep();}
+
+  const stepperHtml=STEPS.map((s,i)=>{
+    const done=i<step,active=i===step;
+    const circleBg=active?'#1a2440':done?'#16A34A':'var(--border)';
+    const circleColor=active||done?'white':'#94A3B8';
+    const circleContent=done?'✓':(i+1);
+    return `<button onclick="${i<step?`setSubWizardStep(${i})`:''}" style="display:flex;align-items:center;gap:.375rem;padding:.375rem .625rem;border-radius:.5rem;border:none;font-size:.7rem;font-weight:600;cursor:${i<step?'pointer':'default'};background:${active?'white':'transparent'};color:${active?'#1a2440':done?'#16A34A':'#94A3B8'};box-shadow:${active?'0 1px 3px rgba(0,0,0,.1)':'none'};white-space:nowrap;flex-shrink:0;"><span style="width:16px;height:16px;border-radius:50%;background:${circleBg};color:${circleColor};display:inline-flex;align-items:center;justify-content:center;font-size:.625rem;font-weight:700;">${circleContent}</span>${s}</button>`;
+  }).join('');
+
+  return `<div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
+    <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--border);background:var(--bg-card);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:1rem;">
+      <div style="display:flex;align-items:center;gap:.75rem;min-width:0;">
+        <button onclick="if(confirm('Cancelar criação do novo conjunto? Mudanças serão perdidas.')){closeSubAdsetWizard();}" style="background:transparent;border:none;color:#1a2440;cursor:pointer;font-size:1rem;font-weight:700;">←</button>
+        <div style="min-width:0;">
+          <p style="font-size:.65rem;color:var(--text-muted);margin:0;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">Novo Conjunto em</p>
+          <h2 style="font-weight:800;font-size:1rem;margin:.125rem 0 0;color:#1a2440;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.name||'Campanha')}</h2>
+        </div>
+      </div>
+      <div style="display:flex;gap:.25rem;background:var(--border-light);border-radius:.75rem;padding:.25rem;overflow-x:auto;">${stepperHtml}</div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:1.5rem;"><div style="max-width:800px;margin:0 auto;">${body}</div></div>
+    ${step<2?`<div style="padding:1rem 1.5rem;border-top:1px solid var(--border);background:var(--bg-card);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <button onclick="setSubWizardStep(${step-1})" ${step===0?'disabled':''} style="padding:.625rem 1.25rem;border:1.5px solid var(--border);border-radius:.75rem;background:var(--bg-card);color:var(--text-secondary);font-weight:600;font-size:.875rem;cursor:${step===0?'default':'pointer'};opacity:${step===0?'.4':'1'};">← Anterior</button>
+      <span style="font-size:.75rem;color:var(--text-muted);">${step+1} / ${STEPS.length}</span>
+      <button onclick="nextSubWizardStep()" style="padding:.625rem 1.5rem;border:none;border-radius:.75rem;background:var(--accent);color:white;font-weight:700;font-size:.875rem;cursor:pointer;">${step===1?'Revisar →':'Próximo →'}</button>
+    </div>`:''}
+  </div>`;
+}
+
+function renderSubAdsetPublishStep(){
+  const w=S.campaignEditor.subWizard;if(!w)return '';
+  const c=w.campaign;
+  if(w.pubFinished){
+    const okColor=w.pubErrors.length?'#CA8A04':'#16A34A';
+    return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.875rem;padding:1.5rem;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:.75rem;">${w.pubErrors.length?'⚠️':'🎉'}</div>
+      <h3 style="font-size:1.25rem;font-weight:800;margin:0 0 .5rem;color:${okColor};">${w.pubErrors.length?'Concluído com avisos':'Conjunto criado com sucesso!'}</h3>
+      <p style="font-size:.875rem;color:var(--text-secondary);margin:0 0 1.25rem;">${w.createdAdsetId?'1 conjunto + ':''}${S.na} anúncio${S.na>1?'s':''} criado${S.na>1?'s':''} em "${esc(c.name)}"</p>
+      <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;">
+        <button onclick="closeSubAdsetWizard()" style="padding:.625rem 1.25rem;background:var(--accent);color:white;border:none;border-radius:.625rem;font-weight:700;font-size:.85rem;cursor:pointer;">Voltar à campanha</button>
+        <button onclick="(()=>{const cid=S.campaignEditor.subWizard.campaignId;closeSubAdsetWizard();setTimeout(()=>openSubAdsetWizard(cid),300);})()" style="padding:.625rem 1.25rem;background:transparent;color:#1a2440;border:1.5px solid var(--accent);border-radius:.625rem;font-weight:700;font-size:.85rem;cursor:pointer;">+ Criar outro conjunto</button>
+      </div>
+      ${w.pubErrors.length?`<div style="margin-top:1rem;background:#FEF2F2;border:1px solid #FECACA;border-radius:.625rem;padding:.875rem;text-align:left;">
+        <p style="font-size:.75rem;font-weight:700;color:#DC2626;margin:0 0 .5rem;">Erros (${w.pubErrors.length}):</p>
+        ${w.pubErrors.map(e=>`<p style="font-size:.7rem;color:#DC2626;margin:.125rem 0;">${esc(e)}</p>`).join('')}
+      </div>`:''}
+    </div>`;
+  }
+  return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.875rem;padding:1.25rem;">
+    <h3 style="font-size:1rem;font-weight:800;margin:0 0 .75rem;color:#1a2440;">Pronto para publicar</h3>
+    <div style="background:var(--bg-secondary);border-radius:.625rem;padding:.875rem;margin-bottom:1rem;">
+      <p style="font-size:.7rem;font-weight:700;color:var(--text-muted);margin:0 0 .5rem;text-transform:uppercase;">Resumo</p>
+      <div style="display:flex;flex-direction:column;gap:.375rem;">
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Campanha</span><span style="font-weight:600;color:#1a2440;text-align:right;">${esc(c.name)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Status do conjunto</span><span style="font-weight:600;color:#1a2440;">${S.cc.status}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Anúncios</span><span style="font-weight:600;color:#1a2440;">${S.na}</span></div>
+        ${!S.cc.cbo&&S.ds.budget?`<div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Budget</span><span style="font-weight:600;color:#1a2440;">$${parseFloat(S.ds.budget).toFixed(2)} ${S.ds.budgetType==='daily_budget'?'/dia':'total'}</span></div>`:''}
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Página</span><span style="font-weight:600;color:#1a2440;">${esc(S.da.pageName||S.da.pageId||'—')}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;gap:1rem;"><span style="color:var(--text-muted);">URL</span><span style="font-weight:600;color:#1a2440;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%;">${esc(S.da.linkUrl||'—')}</span></div>
+      </div>
+    </div>
+    ${!w.pubRunning?`<button onclick="publishSubAdset()" style="width:100%;padding:.875rem;background:var(--accent);color:white;border:none;border-radius:.75rem;font-weight:800;font-size:.95rem;cursor:pointer;">⚡ Criar conjunto + ${S.na} anúncio${S.na>1?'s':''}</button>`:`<div style="display:flex;align-items:center;justify-content:center;padding:.875rem;background:rgba(215,250,0,.15);border-radius:.75rem;gap:.5rem;color:#1a2440;font-weight:700;"><div style="width:16px;height:16px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;" class="spin"></div>Publicando...</div>`}
+    ${w.pubLog.length?`<div style="background:#020617;border-radius:.625rem;padding:.625rem;font-family:monospace;font-size:.7rem;max-height:200px;overflow-y:auto;margin-top:.75rem;color:#94A3B8;display:flex;flex-direction:column;gap:.125rem;">
+      ${w.pubLog.slice(-30).map(l=>`<span style="color:${l.t==='error'?'#EF4444':l.t==='success'?'#22C55E':l.t==='loading'?'#F59E0B':'#94A3B8'};">${esc(l.m)}</span>`).join('')}
+    </div>`:''}
+  </div>`;
+}
+
 function renderS4() {
   const da=S.da, mode=S.creativeMode||'single';
   const customCount=S.campaignCreatives.filter(c=>c&&(c.imageHash||c.imageUrl||c.videoId||c.primaryText||c.headline)).length;
@@ -2016,6 +2094,8 @@ function renderCampaigns() {
 
 function renderCampaignDetail(){
   const ce=S.campaignEditor,cid=ce.expandedId;
+  // Se o sub-wizard está ativo, renderiza ele em vez do editor
+  if(ce.subWizard)return renderSubAdsetWizard();
   const c=S.campaigns.find(x=>x.id===cid);
   const ed=ce.editingCampaign||{};
   const hasDailyBudget=!!c?.daily_budget;
@@ -2088,22 +2168,7 @@ function renderCampaignDetail(){
         ;}).join('')}
     </div>`}
 
-    <button onclick="S.campaignEditor.newAdsetForm=S.campaignEditor.newAdsetForm?null:{name:'',budget:'',status:'PAUSED',countries:'US',ageMin:18,ageMax:65,billing_event:'IMPRESSIONS',optimization_goal:'LINK_CLICKS'};R()" style="width:100%;padding:.625rem;border:1.5px dashed var(--border-light);border-radius:.625rem;background:var(--bg-card);color:var(--accent);font-weight:600;font-size:.8rem;cursor:pointer;margin-top:.5rem;">+ Novo Conjunto</button>
-    ${ce.newAdsetForm?`<div style="border:1.5px solid var(--border-light);border-radius:.75rem;padding:1rem;margin-top:.75rem;background:rgba(215,250,0,.1);">
-      <p style="font-size:.7rem;font-weight:700;color:var(--accent);text-transform:uppercase;margin:0 0 .75rem;">Novo Conjunto</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.625rem;">
-        ${inp('Nome','ce-new-name','text','Novo Conjunto',ce.newAdsetForm.name,"S.campaignEditor.newAdsetForm.name=this.value")}
-        ${inp('Budget Diário ($)','ce-new-budget','number','50',ce.newAdsetForm.budget,"S.campaignEditor.newAdsetForm.budget=this.value")}
-        ${inp('Países','ce-new-countries','text','US',ce.newAdsetForm.countries,"S.campaignEditor.newAdsetForm.countries=this.value")}
-        ${inp('Idade min','ce-new-agemin','number','18',ce.newAdsetForm.ageMin,"S.campaignEditor.newAdsetForm.ageMin=this.value")}
-        ${inp('Idade max','ce-new-agemax','number','65',ce.newAdsetForm.ageMax,"S.campaignEditor.newAdsetForm.ageMax=this.value")}
-        ${sel('Status','ce-new-status',[['PAUSED','Pausado'],['ACTIVE','Ativo']],ce.newAdsetForm.status,"S.campaignEditor.newAdsetForm.status=this.value")}
-      </div>
-      <div style="display:flex;gap:.5rem;margin-top:.75rem;">
-        <button onclick="createNewAdset('${cid}')" ${ce.creatingAdset?'disabled':''} style="padding:.5rem 1.25rem;background:var(--accent);color:white;border:none;border-radius:.5rem;font-weight:700;font-size:.8rem;cursor:pointer;">${ce.creatingAdset?'Criando...':'Criar Conjunto'}</button>
-        <button onclick="S.campaignEditor.newAdsetForm=null;R()" style="padding:.5rem 1rem;background:transparent;border:1.5px solid var(--border);border-radius:.5rem;color:var(--text-secondary);font-size:.8rem;cursor:pointer;">Cancelar</button>
-      </div>
-    </div>`:''}`)}
+    <button onclick="openSubAdsetWizard('${cid}')" style="width:100%;padding:.75rem;border:1.5px dashed var(--accent);border-radius:.625rem;background:rgba(215,250,0,.08);color:#1a2440;font-weight:700;font-size:.85rem;cursor:pointer;margin-top:.75rem;">+ Novo Conjunto com Anúncios</button>`)}
 
     </div>
   </div></div>`;
@@ -2235,6 +2300,12 @@ function renderSettings() {
     <p style="font-size:.875rem;color:var(--text-muted);margin:0 0 1.5rem;">Defaults aplicados a todos os lançamentos</p>
     ${card('🌙 Aparência','',`
     ${tog(S.darkMode,"toggleDarkMode()","Dark Mode","Tema escuro para a interface")}`)}
+    ${card('🔐 Sessão','',`
+    ${tog(gs.autoLogin!==false,"toggleAutoLogin()","Auto-login","Conectar automaticamente com o último perfil ao abrir o app")}
+    <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem;">
+      <button onclick="if(confirm('Limpar todas as configurações salvas (chaves API, perfis Meta, templates, regras)? Essa ação não pode ser desfeita.')){localStorage.clear();toast('Tudo limpo. Recarregando...','success',2000);setTimeout(()=>location.reload(),1500);}" style="padding:.5rem 1rem;background:transparent;color:#EF4444;border:1.5px solid #EF4444;border-radius:.5rem;font-size:.75rem;font-weight:700;cursor:pointer;">🗑 Limpar todos os dados salvos</button>
+    </div>
+    <p style="font-size:.7rem;color:var(--text-muted);margin:.5rem 0 0;">Tudo é salvo apenas localmente neste navegador. Cada navegador/dispositivo tem sua própria cópia das configurações.</p>`)}
     ${card('🛡️ Controle de Advantage+','Desative recursos de IA do Meta que alteram seus criativos',`
     ${[['disableImageEnhancements','Desativar melhorias de imagem','Advantage+ Creative, animações, música'],
        ['disableVideoEnhancements','Desativar melhorias de vídeo','Efeitos de vídeo, tradução automática'],
@@ -2246,7 +2317,7 @@ function renderSettings() {
       ${inp('Pixel ID padrão','gs-pixel','text','123456789',gs.defaultPixel||'')}
       ${inp('URL padrão','gs-url','text','https://seusite.com',gs.defaultUrl||'')}
     </div>
-    ${sel('Versão da API','gs-apiversion',[['v21.0','v21.0 (recomendado)'],['v20.0','v20.0'],['v19.0','v19.0']],S.apiVersion,"S.apiVersion=this.value")}
+    ${sel('Versão da API','gs-apiversion',[['v21.0','v21.0 (recomendado)'],['v20.0','v20.0'],['v19.0','v19.0']],S.apiVersion,"S.apiVersion=this.value;const _gs=JSON.parse(localStorage.getItem('globalSettings')||'{}');_gs.apiVersion=this.value;localStorage.setItem('globalSettings',JSON.stringify(_gs));toast('Versão da API salva','success',2000)")}
     <button onclick="saveGs()" style="padding:.625rem 1.25rem;background:var(--accent);color:white;border:none;border-radius:.625rem;font-weight:700;font-size:.875rem;cursor:pointer;">Salvar</button>`)}
     ${card('📁 Google Drive','Conecte ao Google Drive para importar criativos diretamente',`
     <div style="background:rgba(215,250,0,.1);border:1px solid var(--border-light);border-radius:.625rem;padding:.75rem;font-size:.75rem;color:#0f1729;margin-bottom:.75rem;">
@@ -2279,6 +2350,12 @@ function renderSettings() {
 
 // ── Google Drive Integration ──────────────────────────────────────────────
 let _gisLoaded=false, _pickerLoaded=false, _gAccessToken=null;
+// Restaura token salvo (se ainda não expirou)
+try{
+  const saved=JSON.parse(localStorage.getItem('googleToken')||'null');
+  if(saved&&saved.exp>Date.now())_gAccessToken=saved.token;
+  else if(saved)localStorage.removeItem('googleToken');
+}catch{}
 
 function loadGoogleApis(){
   return new Promise((res,rej)=>{
@@ -2317,6 +2394,9 @@ function getGoogleToken(){
       callback:(resp)=>{
         if(resp.error){rej(new Error(resp.error));return;}
         _gAccessToken=resp.access_token;
+        // Persiste token com expiração (Google tokens duram ~3600s, salva 50min de margem)
+        const expiresIn=(resp.expires_in||3600)*1000-300000; // -5min de margem
+        localStorage.setItem('googleToken',JSON.stringify({token:resp.access_token,exp:Date.now()+expiresIn}));
         res(resp.access_token);
       },
     });
@@ -3223,6 +3303,251 @@ async function createNewAdset(cid){
   }catch(e){toast('Erro: '+e.message,'error');}
   S.campaignEditor.creatingAdset=false;R();
 }
+
+// ── Wizard de Novo Conjunto (mesmo formato do lançamento, mas para campanha existente)
+async function openSubAdsetWizard(cid){
+  const c=S.campaigns.find(x=>x.id===cid);if(!c){toast('Campanha não encontrada','error');return;}
+  // Snapshot do contexto do launch normal para restaurar depois
+  S.campaignEditor.subWizardSnapshot={
+    nc:S.nc,ns:S.ns,na:S.na,bulkStep:S.bulkStep,
+    cc:JSON.parse(JSON.stringify(S.cc)),
+    ds:JSON.parse(JSON.stringify(S.ds)),
+    da:JSON.parse(JSON.stringify(S.da)),
+    campNames:[...S.campNames],
+    campaignCreatives:[...S.campaignCreatives],
+    campaignPages:[...S.campaignPages],
+    adsetCreatives:[...S.adsetCreatives],
+    adCreatives:[...S.adCreatives],
+    adCopies:[...S.adCopies],
+    creativeMode:S.creativeMode,adMediaMode:S.adMediaMode,adCopyMode:S.adCopyMode,
+    pageMode:S.pageMode,editAdsPerAdset:S.editAdsPerAdset,adsetAds:S.adsetAds,
+    campAdsetCreatives:JSON.parse(JSON.stringify(S.campAdsetCreatives||{})),
+  };
+  // Configurar contexto isolado para novo conjunto
+  S.nc=1;S.ns=1;S.na=1;
+  S.campNames=[c.name||'Campanha'];
+  S.campaignCreatives=[null];S.campaignPages=[null];
+  S.adsetCreatives=[];S.adCreatives=[];S.adCopies=[];
+  S.creativeMode='single';S.adMediaMode='single';S.adCopyMode='single';
+  S.pageMode='single';S.editAdsPerAdset=false;
+  S.adsetAds={};S.campAdsetCreatives={};
+  // Puxa configurações da campanha
+  S.cc={
+    objective:c.objective||'OUTCOME_SALES',
+    specialCat:(c.special_ad_categories&&c.special_ad_categories[0])||'Nenhuma',
+    cbo:!!c.daily_budget||!!c.lifetime_budget,
+    cboBudgetType:c.daily_budget?'daily_budget':'lifetime_budget',
+    cboBudget:c.daily_budget?(c.daily_budget/100).toString():c.lifetime_budget?(c.lifetime_budget/100).toString():'',
+    status:'PAUSED',
+    bidStrategy:c.bid_strategy||'LOWEST_COST_WITHOUT_CAP',
+    bidAmount:c.bid_amount?(c.bid_amount/100).toString():''
+  };
+  // Reset ds (configuração do conjunto) — defaults conservadores
+  S.ds={
+    budgetType:'daily_budget',budget:'',bidAmount:'',
+    startTime:'',endTime:'',convLocation:'WEBSITE',pixelId:S.pixels?.[0]?.id||'',
+    customEventType:'PURCHASE',ageMin:18,ageMax:65,genders:'all',countries:'US',
+    detailedTargeting:'',placementMode:'auto',advantageAudience:true
+  };
+  // Reset da (anúncio) com defaults globais
+  const gs=JSON.parse(localStorage.getItem('globalSettings')||'{}');
+  S.da={
+    name:'',pageId:'',pageName:'',mediaType:'image',
+    imageUrl:'',imageHash:'',videoId:'',videoThumb:'',videoTitle:'',
+    primaryTexts:[''],headlines:[''],
+    linkUrl:gs.defaultUrl||'',
+    urlParams:'utm_source=facebook&utm_medium={{placement}}&utm_campaign={{campaign.name}}&utm_content={{adset.name}}',
+    cta:'SHOP_NOW'
+  };
+  // Abre o wizard
+  S.campaignEditor.subWizard={
+    campaignId:cid,campaign:c,step:0,
+    pubRunning:false,pubFinished:false,pubLog:[],pubErrors:[],
+    createdAdsetId:null
+  };
+  toast('Configurações da campanha "'+c.name+'" carregadas','success',2500);
+  R();
+}
+
+function closeSubAdsetWizard(){
+  const snap=S.campaignEditor.subWizardSnapshot;
+  if(snap){
+    S.nc=snap.nc;S.ns=snap.ns;S.na=snap.na;S.bulkStep=snap.bulkStep;
+    S.cc=snap.cc;S.ds=snap.ds;S.da=snap.da;
+    S.campNames=snap.campNames;S.campaignCreatives=snap.campaignCreatives;
+    S.campaignPages=snap.campaignPages;S.adsetCreatives=snap.adsetCreatives;
+    S.adCreatives=snap.adCreatives;S.adCopies=snap.adCopies;
+    S.creativeMode=snap.creativeMode;S.adMediaMode=snap.adMediaMode;S.adCopyMode=snap.adCopyMode;
+    S.pageMode=snap.pageMode;S.editAdsPerAdset=snap.editAdsPerAdset;S.adsetAds=snap.adsetAds;
+    S.campAdsetCreatives=snap.campAdsetCreatives;
+  }
+  const cid=S.campaignEditor.subWizard?.campaignId;
+  S.campaignEditor.subWizard=null;
+  S.campaignEditor.subWizardSnapshot=null;
+  if(cid)loadEditorAdsets(cid);
+  R();
+}
+
+function setSubWizardStep(n){
+  if(!S.campaignEditor.subWizard)return;
+  S.campaignEditor.subWizard.step=Math.max(0,Math.min(2,n));
+  R();
+}
+
+function subWizardLog(m,t='info'){
+  const w=S.campaignEditor.subWizard;if(!w)return;
+  w.pubLog=[...w.pubLog,{m,t}].slice(-100);
+  R();
+}
+
+async function publishSubAdset(){
+  const w=S.campaignEditor.subWizard;if(!w)return;
+  const cid=w.campaignId;
+  w.pubRunning=true;w.pubFinished=false;w.pubLog=[];w.pubErrors=[];R();
+  const da=S.da,ds=S.ds,cc=S.cc,na=S.na;
+  try{
+    // Validar página
+    subWizardLog(`ℹ️ Validando Page ID: ${da.pageId}...`,'loading');
+    try{
+      const pc=await fbApi(`/${da.pageId}`,{fields:'id,name',access_token:S.token});
+      subWizardLog(`  ✓ Página: ${pc.name}`,'success');
+    }catch(e){
+      subWizardLog(`✗ Page ID inválido: ${e.message}`,'error');
+      w.pubErrors.push('Page ID inválido: '+e.message);
+      w.pubRunning=false;w.pubFinished=true;R();return;
+    }
+
+    // FASE 1 — criar adset
+    subWizardLog(`━━ FASE 1/3 — criando conjunto`,'loading');
+    const tg={
+      age_min:Math.max(18,ds.ageMin),age_max:Math.min(65,ds.ageMax),
+      geo_locations:{countries:ds.countries.split(',').map(s=>s.trim()).filter(Boolean)||['US']},
+      ...(ds.genders==='female'?{genders:[2]}:ds.genders==='male'?{genders:[1]}:{}),
+      ...(ds.detailedTargeting?{flexible_spec:[{interests:ds.detailedTargeting.split(',').map(s=>({name:s.trim()}))}]}:{}),
+      targeting_automation:{advantage_audience:ds.advantageAudience?1:0}
+    };
+    const og=OBJ_OPTIM[cc.objective],dt=OBJ_DEST[cc.objective];
+    const bidStrategy=cc.bidStrategy||'LOWEST_COST_WITHOUT_CAP';
+    const asetName=`${S.adsetPrefix||'AdSet'} ${w.campaign.name||'Camp'} — ${new Date().toISOString().slice(0,10)}`.slice(0,255);
+    const asetBody={
+      _method:'POST',access_token:S.token,
+      name:asetName,campaign_id:cid,
+      billing_event:OBJ_BILLING[cc.objective],
+      optimization_goal:og,bid_strategy:bidStrategy,
+      status:cc.status,
+      targeting:JSON.stringify(tg),
+      ...(dt!=='UNDEFINED'?{destination_type:dt}:{}),
+      ...(og==='OFFSITE_CONVERSIONS'?{attribution_spec:JSON.stringify([{event_type:'CLICK_THROUGH',window_days:7}])}:{})
+    };
+    const effBidAmt=ds.bidAmount||cc.bidAmount;
+    if((bidStrategy==='LOWEST_COST_WITH_BID_CAP'||bidStrategy==='COST_CAP')&&effBidAmt)asetBody.bid_amount=Math.round(parseFloat(effBidAmt)*100);
+    if(bidStrategy==='LOWEST_COST_WITH_MIN_ROAS'&&effBidAmt)asetBody.bid_amount=Math.round(parseFloat(effBidAmt)*1000);
+    if(!cc.cbo&&ds.budget)asetBody[ds.budgetType]=Math.max(100,Math.round(parseFloat(ds.budget)*100));
+    if(ds.startTime)asetBody.start_time=ds.startTime+':00';
+    if(ds.endTime)asetBody.end_time=ds.endTime+':00';
+    if(og==='OFFSITE_CONVERSIONS'&&ds.pixelId)asetBody.promoted_object=JSON.stringify({pixel_id:ds.pixelId,custom_event_type:ds.customEventType||'PURCHASE'});
+
+    const asetRes=await fbApi(`/${S.selectedAccount.id}/adsets`,asetBody);
+    const adsetId=asetRes.id;
+    if(!adsetId)throw new Error('Falha ao criar conjunto: sem ID retornado');
+    w.createdAdsetId=adsetId;
+    subWizardLog(`  ✓ Conjunto criado: ${adsetId}`,'success');
+
+    // FASE 2 — criar N criativos
+    subWizardLog(`━━ FASE 2/3 — criando ${na} criativo${na>1?'s':''}`,'loading');
+    const isFbUrl=u=>!u||u.includes('lookaside.facebook')||u.includes('fbcdn.net')||u.includes('scontent');
+
+    // Pre-fetch thumbnails de vídeos
+    const allVideoIds=[...new Set([da.videoId,...(S.adCreatives||[]).map(c=>c?.videoId)].filter(Boolean))];
+    const videoThumbs={};
+    for(const vid of allVideoIds){
+      try{const r=await fbApi(`/${vid}`,{fields:'picture',access_token:S.token});if(r.picture)videoThumbs[vid]=r.picture;}catch{}
+    }
+
+    const perAdMedia=S.adMediaMode==='per_ad'&&na>1;
+    const perAdCopy=S.adCopyMode==='per_ad'&&na>1;
+    const creativeIds=[];
+
+    for(let a=0;a<na;a++){
+      const adCr=perAdMedia?S.adCreatives[a]:null;
+      const effHash=adCr?.imageHash||da.imageHash;
+      const effImgUrl=adCr?.imageUrl||da.imageUrl;
+      const effVideoId=adCr?.videoId||da.videoId;
+      const effVideoThumb=adCr?.videoThumb||da.videoThumb||videoThumbs[effVideoId]||'';
+      const adCp=perAdCopy?S.adCopies[a]:null;
+      const effMsg=(adCp?.primaryText?.trim())||(da.primaryTexts[0]||'').trim();
+      const effHl=(adCp?.headline?.trim())||(da.headlines[0]||'').trim();
+      const effCta=da.cta;
+      const effLinkUrl=da.linkUrl;
+      const effUrlParams=da.urlParams&&da.urlParams.trim()?da.urlParams.trim():'';
+
+      let spec;
+      if(effVideoId){
+        const vd={video_id:effVideoId,call_to_action:{type:effCta,value:{link:effLinkUrl}}};
+        if(effMsg)vd.message=effMsg;if(effHl)vd.title=effHl;
+        if(effVideoThumb)vd.image_url=effVideoThumb;
+        spec={page_id:da.pageId,video_data:vd};
+      } else {
+        const ld={link:effLinkUrl};
+        if(effMsg)ld.message=effMsg;if(effHl)ld.name=effHl;
+        ld.call_to_action={type:effCta,value:{link:effLinkUrl}};
+        if(effHash)ld.image_hash=effHash;
+        else if(effImgUrl&&!isFbUrl(effImgUrl))ld.picture=effImgUrl;
+        spec={page_id:da.pageId,link_data:ld};
+      }
+      const body={_method:'POST',access_token:S.token,name:`Creative_${a+1}`.slice(0,255),object_story_spec:JSON.stringify(spec)};
+      if(effUrlParams)body.url_tags=effUrlParams;
+      try{
+        const cr=await fbApi(`/${S.selectedAccount.id}/adcreatives`,body);
+        creativeIds.push(cr.id);
+        subWizardLog(`  ✓ Criativo ${a+1}: ${cr.id}`,'success');
+      }catch(e){
+        creativeIds.push(null);
+        w.pubErrors.push(`Criativo ${a+1}: ${e.message}`);
+        subWizardLog(`  ✗ Criativo ${a+1}: ${e.message}`,'error');
+      }
+      await sleep(150);
+    }
+
+    // FASE 3 — criar N anúncios
+    subWizardLog(`━━ FASE 3/3 — criando ${na} anúncio${na>1?'s':''}`,'loading');
+    let okCount=0;
+    for(let a=0;a<na;a++){
+      const crid=creativeIds[a];
+      if(!crid){continue;}
+      const adBody={_method:'POST',access_token:S.token,name:`${da.name||'Ad'} — A${a+1}`.slice(0,255),adset_id:adsetId,creative:JSON.stringify({creative_id:crid}),status:cc.status};
+      try{
+        await fbApi(`/${S.selectedAccount.id}/ads`,adBody);
+        okCount++;
+        subWizardLog(`  ✓ Anúncio ${a+1} criado`,'success');
+      }catch(e){
+        w.pubErrors.push(`Anúncio ${a+1}: ${e.message}`);
+        subWizardLog(`  ✗ Anúncio ${a+1}: ${e.message}`,'error');
+      }
+      await sleep(150);
+    }
+
+    subWizardLog(`🎉 Concluído! ${okCount}/${na} anúncios criados.`,okCount===na?'success':'loading');
+  } catch(e){
+    subWizardLog(`✗ ${e.message}`,'error');
+    w.pubErrors.push(e.message);
+  }
+  w.pubRunning=false;w.pubFinished=true;R();
+}
+
+function nextSubWizardStep(){
+  if(!S.campaignEditor.subWizard)return;
+  const cur=S.campaignEditor.subWizard.step;
+  // Valida steps reusando validateStepType
+  if(cur===0){
+    const errs=validateStepType({type:'conjunto',adsetIdx:-1});
+    if(errs.length){errs.forEach(e=>toast(e,'warning'));return;}
+  } else if(cur===1){
+    const errs=validateStepType({type:'anuncio',adsetIdx:-1});
+    if(errs.length){errs.forEach(e=>toast(e,'warning'));return;}
+  }
+  setSubWizardStep(cur+1);
+}
 async function toggleAdsetStatus(id,cur){
   try{await fbApi(`/${id}`,{_method:'POST',status:cur==='ACTIVE'?'PAUSED':'ACTIVE',access_token:S.token});toast(cur==='ACTIVE'?'Conjunto pausado':'Conjunto ativado','success');await loadEditorAdsets(S.campaignEditor.expandedId);}catch(e){toast('Erro: '+e.message,'error');}
 }
@@ -3279,15 +3604,33 @@ function plog(m,t='info'){
 
 async function startPub(){
   const errs=[];
-  // Validate pages
-  if(S.pageMode==='per_campaign'&&S.nc>1){
-    const hasAny=S.campaignPages.some(p=>p)||S.da.pageId;
-    if(!hasAny)errs.push('Nenhuma página selecionada (nem padrão, nem por campanha).');
-    for(let i=0;i<S.nc;i++){if(!S.campaignPages[i]&&!S.da.pageId)errs.push(`Campanha #${i+1}: sem página definida.`);}
-  }else{
-    if(!S.da.pageId)errs.push('Page ID não selecionado.');
+  const usingPerAdset=S.editAdsPerAdset&&S.ns>1;
+
+  // Helper: retorna a página efetiva para um conjunto específico
+  const effPageForAdset=(si,ci)=>{
+    if(usingPerAdset&&S.adsetAds[si]?.pageId)return S.adsetAds[si].pageId;
+    if(S.pageMode==='per_campaign'&&S.nc>1&&S.campaignPages[ci])return S.campaignPages[ci];
+    return S.da.pageId;
+  };
+  // Helper: retorna a URL efetiva para um conjunto
+  const effUrlForAdset=(si)=>{
+    if(usingPerAdset&&S.adsetAds[si]?.linkUrl)return S.adsetAds[si].linkUrl;
+    return S.da.linkUrl;
+  };
+
+  // Valida cada combinação campanha × conjunto
+  let pageErrCount=0,urlErrCount=0;
+  for(let ci=0;ci<S.nc;ci++){
+    for(let si=0;si<S.ns;si++){
+      const p=effPageForAdset(si,ci);
+      if(!p){pageErrCount++;if(pageErrCount<=3)errs.push(`Conj. ${si+1} da Camp. ${ci+1}: sem página definida.`);}
+      const u=effUrlForAdset(si);
+      if(!u||!u.startsWith('http')){urlErrCount++;if(urlErrCount<=3)errs.push(`Conj. ${si+1} da Camp. ${ci+1}: URL de destino inválida.`);}
+    }
   }
-  if(!S.da.linkUrl||!S.da.linkUrl.startsWith('http'))errs.push('URL de destino inválida.');
+  if(pageErrCount>3)errs.push(`...e mais ${pageErrCount-3} conjunto(s) sem página.`);
+  if(urlErrCount>3)errs.push(`...e mais ${urlErrCount-3} conjunto(s) com URL inválida.`);
+
   if(!S.cc.cbo&&(!S.ds.budget||parseFloat(S.ds.budget)<1))errs.push('Orçamento mínimo: $1/dia.');
   if(errs.length){S.pubErrors=errs.map(e=>({campName:'Validação',error:e}));S.pubFinished=true;S.pubLog=errs.map(e=>({m:`⚠️ ${e}`,t:'error'}));R();return;}
 
@@ -3578,6 +3921,7 @@ async function evaluateRules(){
 
 function toggleGs(f){const gs=JSON.parse(localStorage.getItem('globalSettings')||'{}');gs[f]=!gs[f];localStorage.setItem('globalSettings',JSON.stringify(gs));R();}
 function toggleDarkMode(){S.darkMode=!S.darkMode;localStorage.setItem('darkMode',JSON.stringify(S.darkMode));document.body.classList.toggle('dark',S.darkMode);R();}
+function toggleAutoLogin(){const gs=JSON.parse(localStorage.getItem('globalSettings')||'{}');gs.autoLogin=gs.autoLogin===false?true:false;localStorage.setItem('globalSettings',JSON.stringify(gs));toast(gs.autoLogin===false?'Auto-login desativado':'Auto-login ativado','success',2000);R();}
 function saveGs(){const gs=JSON.parse(localStorage.getItem('globalSettings')||'{}');gs.defaultPixel=document.getElementById('gs-pixel')?.value;gs.defaultUrl=document.getElementById('gs-url')?.value;localStorage.setItem('globalSettings',JSON.stringify(gs));toast('Configurações salvas!','success');}
 function saveGoogleConfig(){const gs=JSON.parse(localStorage.getItem('globalSettings')||'{}');gs.googleApiKey=document.getElementById('gs-gapi-key')?.value?.trim()||'';gs.googleClientId=document.getElementById('gs-gapi-clientid')?.value?.trim()||'';localStorage.setItem('globalSettings',JSON.stringify(gs));toast(gs.googleApiKey&&gs.googleClientId?'Google Drive configurado!':'Credenciais removidas.','success');R();}
 
@@ -3703,6 +4047,25 @@ function matchOrdersToCampaigns(orders,campaigns){
 
 if(S.darkMode)document.body.classList.add('dark');
 R();
+
+// Auto-login no último perfil usado (se preferência ativa)
+(function autoLogin(){
+  try{
+    const gs=JSON.parse(localStorage.getItem('globalSettings')||'{}');
+    if(gs.autoLogin===false)return; // desativado pelo usuário
+    if(!S.savedProfiles||!S.savedProfiles.length)return;
+    // Pega o perfil mais recente (savedAt mais recente)
+    const last=[...S.savedProfiles].sort((a,b)=>new Date(b.savedAt||0)-new Date(a.savedAt||0))[0];
+    if(last&&last.token&&last.appId){
+      setTimeout(()=>{
+        if(S.view==='login'){
+          toast('Conectando como '+last.name+'...','info',2000);
+          loginProfile(last.id);
+        }
+      },300);
+    }
+  }catch{}
+})();
 </script>
 </body>
 </html>
