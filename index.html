@@ -429,7 +429,7 @@ function renderMain() {
   <div class="sidebar-overlay ${S.sidebarOpen?'open':''}" onclick="S.sidebarOpen=false;R()"></div>
   <div class="sidebar ${S.sidebarOpen?'open':''}" style="width:220px;background:#1a2440;color:#e2e8f0;display:flex;flex-direction:column;flex-shrink:0;">
     <div style="padding:5px 0.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;">
-      <img src="https://i.ibb.co/ZwcZDT6/HYPERADS-LOGO.png" alt="HyperAds" style="width:70px;height:auto;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
+      <img src="https://i.ibb.co/ZwcZDT6/HYPERADS-LOGO.png" alt="HyperAds" style="width:70px;min-width:70px;max-width:70px;height:auto;display:block;flex-shrink:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
       <div style="display:none;align-items:center;gap:.625rem;"><div style="width:32px;height:32px;background:#d7fa00;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.875rem;font-weight:900;color:#1a2440;flex-shrink:0;">H</div><span style="font-weight:800;font-size:.9rem;letter-spacing:-.01em;">HyperAds</span></div>
     </div>
     <nav style="flex:1;padding:.75rem .625rem;overflow-y:auto;">
