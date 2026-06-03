@@ -346,9 +346,9 @@ function renderLogin() {
   return `<div style="min-height:100vh;background:linear-gradient(160deg,#0f1729 0%,#1a2440 50%,#0f1729 100%);display:flex;align-items:center;justify-content:center;padding:1rem;">
   <div style="width:100%;max-width:420px;">
     <div style="text-align:center;margin-bottom:2.5rem;">
-      <div style="width:56px;height:56px;background:#d7fa00;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:#1a2440;margin:0 auto 1rem;box-shadow:0 8px 24px rgba(215,250,0,.3);">H</div>
-      <h1 style="color:white;font-size:1.75rem;font-weight:900;margin:0;letter-spacing:-.02em;">HyperAds</h1>
-      <p style="color:#8896ab;font-size:.8rem;margin:.5rem 0 0;letter-spacing:.05em;">META ADS PLATFORM</p>
+      <img src="https://i.ibb.co/ZwcZDT6/HYPERADS-LOGO.png" alt="HyperAds" style="max-width:260px;width:100%;height:auto;margin:0 auto;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';"/>
+      <div style="display:none;width:56px;height:56px;background:#d7fa00;border-radius:14px;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:#1a2440;margin:0 auto 1rem;box-shadow:0 8px 24px rgba(215,250,0,.3);">H</div>
+      <p style="color:#8896ab;font-size:.8rem;margin:1rem 0 0;letter-spacing:.05em;">META ADS PLATFORM</p>
     </div>
     ${ps.length ? `
     <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:1rem;overflow:hidden;margin-bottom:1rem;">
@@ -406,14 +406,21 @@ function renderMain() {
   const bms = S.bms;
   const allAccs = [...personal, ...bms.flatMap(b => b.owned_ad_accounts?.data||[])];
 
-  const accountSelect = allAccs.length ? `<div style="padding:.75rem;border-top:1px solid var(--border);">
-    <p style="font-size:.55rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin:0 0 .375rem .25rem;">Conta ativa</p>
-    <select onchange="selectAccount(this.value)" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:.5rem;padding:.5rem .625rem;font-size:.7rem;color:white;outline:none;">
+  const accIdShort = id => (id||'').replace('act_','');
+  const sel0 = S.selectedAccount;
+  const accountSelect = allAccs.length ? `<div style="padding:.75rem;border-top:1px solid rgba(255,255,255,.06);">
+    <p style="font-size:.55rem;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.12em;margin:0 0 .5rem .25rem;">Conta ativa</p>
+    ${sel0?`<div style="background:rgba(215,250,0,.08);border:1px solid rgba(215,250,0,.25);border-radius:.625rem;padding:.5rem .625rem;margin-bottom:.375rem;">
+      <p style="font-size:.7rem;font-weight:700;color:#d7fa00;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${acctStatus(sel0.account_status)} ${esc(sel0.name)}</p>
+      <p style="font-size:.55rem;color:rgba(255,255,255,.5);margin:.125rem 0 0;font-family:monospace;">${esc(accIdShort(sel0.id))}</p>
+    </div>`:''}
+    <select onchange="selectAccount(this.value)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:.5rem;padding:.5rem .625rem;font-size:.7rem;color:white;outline:none;cursor:pointer;">
+      <option value="" disabled selected>Trocar conta...</option>
       ${personal.length ? `<optgroup label="── Pessoal ──">
-        ${personal.map(a=>`<option value="${a.id}" ${S.selectedAccount?.id===a.id?'selected':''}>${acctStatus(a.account_status)} ${esc(a.name)}</option>`).join('')}
+        ${personal.map(a=>`<option value="${a.id}" ${S.selectedAccount?.id===a.id?'selected':''}>${acctStatus(a.account_status)} ${esc(a.name)} (${esc(accIdShort(a.id))})</option>`).join('')}
       </optgroup>` : ''}
       ${bms.map(b => { const ac = b.owned_ad_accounts?.data||[]; return ac.length ? `<optgroup label="── ${esc(b.name)} ──">
-        ${ac.map(a=>`<option value="${a.id}" ${S.selectedAccount?.id===a.id?'selected':''}>${acctStatus(a.account_status)} ${esc(a.name)}</option>`).join('')}
+        ${ac.map(a=>`<option value="${a.id}" ${S.selectedAccount?.id===a.id?'selected':''}>${acctStatus(a.account_status)} ${esc(a.name)} (${esc(accIdShort(a.id))})</option>`).join('')}
       </optgroup>` : ''; }).join('')}
     </select>
   </div>` : '';
@@ -421,9 +428,9 @@ function renderMain() {
   return `<div style="display:flex;height:100vh;overflow:hidden;">
   <div class="sidebar-overlay ${S.sidebarOpen?'open':''}" onclick="S.sidebarOpen=false;R()"></div>
   <div class="sidebar ${S.sidebarOpen?'open':''}" style="width:220px;background:#1a2440;color:#e2e8f0;display:flex;flex-direction:column;flex-shrink:0;">
-    <div style="padding:1.25rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.625rem;">
-      <div style="width:32px;height:32px;background:#d7fa00;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.875rem;font-weight:900;color:#1a2440;flex-shrink:0;">H</div>
-      <span style="font-weight:800;font-size:.9rem;letter-spacing:-.01em;">HyperAds</span>
+    <div style="padding:1.25rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;">
+      <img src="https://i.ibb.co/ZwcZDT6/HYPERADS-LOGO.png" alt="HyperAds" style="max-width:160px;width:100%;height:auto;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
+      <div style="display:none;align-items:center;gap:.625rem;"><div style="width:32px;height:32px;background:#d7fa00;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.875rem;font-weight:900;color:#1a2440;flex-shrink:0;">H</div><span style="font-weight:800;font-size:.9rem;letter-spacing:-.01em;">HyperAds</span></div>
     </div>
     <nav style="flex:1;padding:.75rem .625rem;overflow-y:auto;">
       ${NAV.map(n=>`<button onclick="setSubview('${n.id}')" style="width:100%;display:flex;align-items:center;gap:.75rem;padding:.625rem .875rem;border-radius:.625rem;border:none;cursor:pointer;font-size:.8rem;margin-bottom:.25rem;background:${S.sub===n.id?'rgba(215,250,0,.1)':'transparent'};color:${S.sub===n.id?'var(--accent)':'var(--text-secondary)'};font-weight:${S.sub===n.id?'700':'500'};transition:all .15s;${S.sub===n.id?'border-left:3px solid var(--accent);':''}" onmouseover="if('${S.sub}'!=='${n.id}')this.style.background='rgba(255,255,255,.04)'" onmouseout="if('${S.sub}'!=='${n.id}')this.style.background='transparent'"><span style="font-size:.95rem;">${n.icon}</span>${n.label}</button>`).join('')}
@@ -2039,57 +2046,120 @@ function renderS5() {
 // ── Campaigns ──────────────────────────────────────────────────────────────
 function renderCampaigns() {
   if(S.campaignEditor.expandedId)return renderCampaignDetail();
-  return `<div style="display:flex;flex-direction:column;height:100%;">
-  <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);background:var(--bg-primary);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-    <div><h2 style="font-weight:700;font-size:1.125rem;margin:0;color:var(--text-primary);">Campanhas</h2>
-    <p style="font-size:.75rem;color:var(--text-muted);margin:.125rem 0 0;">${S.campaigns.length} campanhas · ${esc(S.selectedAccount?.name||'')}</p></div>
-    <button onclick="loadCampaigns()" style="padding:.5rem 1rem;border:1.5px solid var(--border);border-radius:.625rem;background:var(--bg-card);color:var(--accent);font-size:.8rem;font-weight:600;cursor:pointer;">↻ Atualizar</button>
-  </div>
-  ${S.campaigns.length?`<div style="padding:.75rem 1.25rem;border-bottom:1px solid var(--border);display:flex;gap:.75rem;align-items:center;background:var(--bg-primary);flex-shrink:0;">
-    <input id="camp-search" type="text" placeholder="Buscar por nome..." value="${esc(S.campaignSearch)}" oninput="S.campaignSearch=this.value;R()"
-      style="flex:1;border:1.5px solid var(--border);border-radius:.5rem;padding:.5rem .75rem;font-size:.8rem;outline:none;background:var(--bg-card);"
-      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"/>
-    <div style="display:flex;gap:.25rem;">
-      ${[['all','Todos'],['ACTIVE','Ativas'],['PAUSED','Pausadas'],['ARCHIVED','Arquivadas']].map(([v,l])=>`
-      <button onclick="S.campaignFilter='${v}';R()" style="padding:.375rem .75rem;border-radius:.5rem;border:1.5px solid ${S.campaignFilter===v?'#1a2440':'var(--border)'};background:${S.campaignFilter===v?'#EEF2FF':'white'};color:${S.campaignFilter===v?'#1a2440':'#64748B'};font-size:.75rem;font-weight:600;cursor:pointer;">${l}</button>`).join('')}
+  const total=S.campaigns.length;
+  const filtered=S.campaigns.filter(c=>{
+    if(S.campaignFilter!=='all'&&c.status!==S.campaignFilter)return false;
+    if(S.campaignSearch&&!c.name.toLowerCase().includes(S.campaignSearch.toLowerCase()))return false;
+    return true;
+  });
+  const counts={
+    all:total,
+    ACTIVE:S.campaigns.filter(c=>c.status==='ACTIVE').length,
+    PAUSED:S.campaigns.filter(c=>c.status==='PAUSED').length,
+    ARCHIVED:S.campaigns.filter(c=>c.status==='ARCHIVED').length,
+  };
+  const acctName=S.selectedAccount?.name||'';
+  const acctIdShort=(S.selectedAccount?.id||'').replace('act_','');
+
+  // Header
+  const header=`<div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);background:var(--bg-card);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:1rem;">
+    <div style="min-width:0;">
+      <h2 style="font-weight:800;font-size:1.25rem;margin:0;color:#1a2440;letter-spacing:-.02em;">Campanhas</h2>
+      <p style="font-size:.75rem;color:var(--text-muted);margin:.25rem 0 0;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
+        <span style="font-weight:600;color:var(--text-secondary);">${esc(acctName)}</span>
+        ${acctIdShort?`<span style="font-family:monospace;background:var(--bg-secondary);padding:2px 8px;border-radius:99px;font-size:.65rem;color:var(--text-muted);">${esc(acctIdShort)}</span>`:''}
+        <span style="color:var(--text-muted);">·</span>
+        <span style="color:var(--text-muted);"><strong style="color:#1a2440;">${total}</strong> campanhas</span>
+      </p>
     </div>
-  </div>`:''}`
-  +`<div style="flex:1;overflow-y:auto;">
-    ${S.campaignsLoading?`<div style="display:flex;align-items:center;justify-content:center;height:160px;gap:.75rem;color:var(--text-muted);"><div style="width:20px;height:20px;border:2px solid #A5B4FC;border-top-color:var(--accent);border-radius:50%;" class="spin"></div>Carregando...</div>`:
-    S.campaigns.length===0?`<div style="display:flex;align-items:center;justify-content:center;height:160px;color:var(--text-muted);font-size:.875rem;">Nenhuma campanha.</div>`:
-    (()=>{const filtered=S.campaigns.filter(c=>{
-      if(S.campaignFilter!=='all'&&c.status!==S.campaignFilter)return false;
-      if(S.campaignSearch&&!c.name.toLowerCase().includes(S.campaignSearch.toLowerCase()))return false;
-      return true;
-    }); return filtered.length===0?`<div style="display:flex;align-items:center;justify-content:center;height:160px;color:var(--text-muted);font-size:.875rem;">Nenhuma campanha encontrada.</div>`:`
-    <table style="width:100%;border-collapse:collapse;">
-      <thead><tr style="background:var(--bg-secondary);border-bottom:1px solid var(--border);position:sticky;top:0;">
-        <th style="padding:.75rem 1.25rem;text-align:left;font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;">Nome</th>
-        <th style="padding:.75rem 1rem;text-align:left;font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;">Objetivo</th>
-        <th style="padding:.75rem 1rem;text-align:center;font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;">On/Off</th>
-        <th style="padding:.75rem 1rem;text-align:left;font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;">Status</th>
-        <th style="padding:.75rem 1rem;text-align:left;font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;">Orçamento</th>
-        <th style="padding:.75rem 1rem;text-align:left;font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;">Criada</th>
-      </tr></thead>
-      <tbody>
-        ${filtered.map(c=>`
-        <tr style="border-bottom:1px solid var(--border);" onmouseover="this.style.background='#FAFAFA'" onmouseout="this.style.background='white'">
-          <td onclick="openCampaignEditor('${c.id}')" style="padding:.875rem 1.25rem;cursor:pointer;"><p style="font-weight:600;color:var(--accent);margin:0;font-size:.875rem;text-decoration:underline;">${esc(c.name)}</p><p style="font-size:.7rem;color:var(--text-muted);margin:.125rem 0 0;font-family:monospace;">${esc(c.id)}</p></td>
-          <td style="padding:.875rem 1rem;font-size:.8rem;color:var(--text-secondary);">${c.objective?.replace('OUTCOME_','')||'—'}</td>
-          <td style="padding:.875rem 1rem;text-align:center;">
-            ${S.campaignToggling[c.id]?
-              `<div style="width:20px;height:20px;border:2px solid #A5B4FC;border-top-color:var(--accent);border-radius:50%;margin:0 auto;" class="spin"></div>`:
-              `<div onclick="toggleCampaignStatus('${c.id}','${c.status}')" style="width:40px;height:22px;border-radius:99px;background:${c.status==='ACTIVE'?'#1a2440':'var(--border)'};cursor:pointer;position:relative;margin:0 auto;">
-                <div style="position:absolute;top:2px;width:18px;height:18px;background:var(--bg-card);border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.2);left:${c.status==='ACTIVE'?'20px':'2px'};transition:left .15s;"></div>
-              </div>`}
-          </td>
-          <td style="padding:.875rem 1rem;">${statusBadge(c.status)}</td>
-          <td style="padding:.875rem 1rem;font-size:.875rem;color:var(--text-secondary);">${c.daily_budget?`$${(c.daily_budget/100).toFixed(2)}/d`:c.lifetime_budget?`$${(c.lifetime_budget/100).toFixed(2)}`:'CBO'}</td>
-          <td style="padding:.875rem 1rem;font-size:.75rem;color:var(--text-muted);">${c.created_time?new Date(c.created_time).toLocaleDateString('pt-BR'):'—'}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>`;})()}
-  </div></div>`;
+    <button onclick="loadCampaigns()" ${S.campaignsLoading?'disabled':''} style="padding:.5rem 1rem;border:1.5px solid var(--border);border-radius:.625rem;background:var(--bg-card);color:#1a2440;font-size:.8rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.375rem;transition:all .2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      <span style="display:inline-block;${S.campaignsLoading?'animation:spin 0.8s linear infinite;':''}">↻</span> ${S.campaignsLoading?'Carregando...':'Atualizar'}
+    </button>
+  </div>`;
+
+  // Toolbar
+  const toolbar=total?`<div style="padding:.875rem 1.5rem;border-bottom:1px solid var(--border);display:flex;gap:.75rem;align-items:center;background:var(--bg-card);flex-shrink:0;flex-wrap:wrap;">
+    <div style="flex:1;min-width:240px;position:relative;">
+      <span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:.875rem;pointer-events:none;">🔍</span>
+      <input id="camp-search" type="text" placeholder="Buscar campanhas por nome..." value="${esc(S.campaignSearch)}" oninput="S.campaignSearch=this.value;R()"
+        style="width:100%;border:1.5px solid var(--border);border-radius:.625rem;padding:.5rem .75rem .5rem 2.25rem;font-size:.8rem;outline:none;background:var(--bg-secondary);color:#1a2440;transition:all .2s;"
+        onfocus="this.style.borderColor='#1a2440';this.style.background='white'" onblur="this.style.borderColor='var(--border)';this.style.background='var(--bg-secondary)'"/>
+    </div>
+    <div style="display:flex;gap:.25rem;background:var(--bg-secondary);border-radius:.625rem;padding:.25rem;">
+      ${[['all','Todos','#1a2440'],['ACTIVE','Ativas','#16A34A'],['PAUSED','Pausadas','#CA8A04'],['ARCHIVED','Arquivadas','#64748B']].map(([v,l,col])=>{
+        const isActive=S.campaignFilter===v;
+        return `<button onclick="S.campaignFilter='${v}';R()" style="padding:.375rem .75rem;border-radius:.5rem;border:none;background:${isActive?'white':'transparent'};color:${isActive?col:'#64748B'};font-size:.75rem;font-weight:${isActive?'700':'600'};cursor:pointer;box-shadow:${isActive?'0 1px 3px rgba(0,0,0,.08)':'none'};transition:all .15s;display:flex;align-items:center;gap:.375rem;white-space:nowrap;">${l}<span style="background:${isActive?col+'15':'rgba(0,0,0,.05)'};color:${isActive?col:'#64748B'};padding:1px 6px;border-radius:99px;font-size:.6rem;font-weight:700;">${counts[v]}</span></button>`;
+      }).join('')}
+    </div>
+  </div>`:'';
+
+  // Lista de campanhas em cards
+  let listHtml='';
+  if(S.campaignsLoading){
+    listHtml=`<div style="display:flex;align-items:center;justify-content:center;height:200px;gap:.75rem;color:var(--text-muted);">
+      <div style="width:24px;height:24px;border:3px solid var(--border);border-top-color:#1a2440;border-radius:50%;" class="spin"></div>
+      <span style="font-size:.875rem;font-weight:600;">Carregando campanhas...</span>
+    </div>`;
+  } else if(total===0){
+    listHtml=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--text-muted);text-align:center;padding:2rem;">
+      <div style="font-size:3rem;margin-bottom:1rem;">📊</div>
+      <p style="font-size:1rem;font-weight:700;color:#1a2440;margin:0 0 .375rem;">Nenhuma campanha</p>
+      <p style="font-size:.8rem;color:var(--text-muted);margin:0;">Crie sua primeira campanha na aba "Lançar"</p>
+    </div>`;
+  } else if(filtered.length===0){
+    listHtml=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;color:var(--text-muted);text-align:center;padding:2rem;">
+      <div style="font-size:2.5rem;margin-bottom:.75rem;">🔍</div>
+      <p style="font-size:.95rem;font-weight:700;color:#1a2440;margin:0 0 .25rem;">Nenhuma campanha encontrada</p>
+      <p style="font-size:.8rem;color:var(--text-muted);margin:0 0 1rem;">Tente ajustar o filtro ou a busca</p>
+      <button onclick="S.campaignFilter='all';S.campaignSearch='';R()" style="padding:.5rem 1rem;background:#1a2440;color:white;border:none;border-radius:.5rem;font-size:.75rem;font-weight:700;cursor:pointer;">Limpar filtros</button>
+    </div>`;
+  } else {
+    listHtml=`<div style="padding:1rem 1.5rem;display:flex;flex-direction:column;gap:.625rem;">
+      ${filtered.map(c=>{
+        const isAct=c.status==='ACTIVE';
+        const budget=c.daily_budget?`$${(c.daily_budget/100).toFixed(2)}/dia`:c.lifetime_budget?`$${(c.lifetime_budget/100).toFixed(2)} total`:'CBO da campanha';
+        const objLabel=(c.objective||'').replace('OUTCOME_','').replace(/_/g,' ').toLowerCase().replace(/\b\w/g,l=>l.toUpperCase())||'—';
+        const objIcon={'Sales':'🛒','Leads':'👥','Traffic':'🔗','Engagement':'💬','Awareness':'📢','App promotion':'📱'}[objLabel]||'🎯';
+        const dateStr=c.created_time?new Date(c.created_time).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}):'—';
+        const statusColors={ACTIVE:{bg:'#dcfce7',color:'#16A34A',label:'ATIVA'},PAUSED:{bg:'#fef9c3',color:'#CA8A04',label:'PAUSADA'},ARCHIVED:{bg:'#f1f5f9',color:'#64748B',label:'ARQUIVADA'}};
+        const st=statusColors[c.status]||{bg:'#f1f5f9',color:'#64748B',label:c.status||'—'};
+        return `<div style="background:var(--bg-card);border:1.5px solid var(--border);border-radius:.875rem;overflow:hidden;transition:all .2s;cursor:pointer;${isAct?'box-shadow:0 1px 2px rgba(22,163,74,.06);':''}" onmouseover="this.style.borderColor='#1a2440';this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(26,36,64,.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none';this.style.boxShadow='${isAct?'0 1px 2px rgba(22,163,74,.06)':'none'}'">
+          <div style="padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;" onclick="openCampaignEditor('${c.id}')">
+            <div style="width:42px;height:42px;background:rgba(26,36,64,.06);border-radius:.625rem;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;">${objIcon}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.25rem;flex-wrap:wrap;">
+                <p style="font-weight:700;color:#1a2440;margin:0;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;">${esc(c.name)}</p>
+                <span style="background:${st.bg};color:${st.color};font-size:.6rem;font-weight:800;padding:.125rem .5rem;border-radius:99px;letter-spacing:.04em;flex-shrink:0;">${st.label}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:.75rem;font-size:.7rem;color:var(--text-muted);flex-wrap:wrap;">
+                <span style="display:inline-flex;align-items:center;gap:.25rem;"><span style="opacity:.6;">📋</span>${objLabel}</span>
+                <span style="opacity:.4;">·</span>
+                <span style="display:inline-flex;align-items:center;gap:.25rem;"><span style="opacity:.6;">💰</span>${budget}</span>
+                <span style="opacity:.4;">·</span>
+                <span style="display:inline-flex;align-items:center;gap:.25rem;"><span style="opacity:.6;">📅</span>${dateStr}</span>
+                <span style="opacity:.4;">·</span>
+                <span style="font-family:monospace;background:var(--bg-secondary);padding:1px 6px;border-radius:.25rem;font-size:.6rem;">${esc(c.id)}</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.625rem;flex-shrink:0;" onclick="event.stopPropagation()">
+              ${S.campaignToggling[c.id]?
+                `<div style="width:22px;height:22px;border:2px solid var(--border);border-top-color:#1a2440;border-radius:50%;" class="spin"></div>`:
+                `<button onclick="toggleCampaignStatus('${c.id}','${c.status}')" title="${isAct?'Pausar':'Ativar'}" style="width:44px;height:24px;border-radius:99px;background:${isAct?'#16A34A':'var(--border)'};border:none;cursor:pointer;position:relative;transition:background .2s;">
+                  <div style="position:absolute;top:2px;width:20px;height:20px;background:white;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.2);left:${isAct?'22px':'2px'};transition:left .2s;"></div>
+                </button>`}
+              <span style="color:var(--text-muted);font-size:1.125rem;line-height:1;">›</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  return `<div style="display:flex;flex-direction:column;height:100%;background:var(--bg-secondary);">
+    ${header}
+    ${toolbar}
+    <div style="flex:1;overflow-y:auto;">${listHtml}</div>
+  </div>`;
 }
 
 function renderCampaignDetail(){
@@ -3259,12 +3329,39 @@ async function selectAccount(id){
 // ── Campaign Editor API ───────────────────────────────────────────────────
 async function loadEditorAdsets(cid){
   S.campaignEditor.adsetsLoading=true;S.campaignEditor.adsets=[];R();
-  try{S.campaignEditor.adsets=await fetchAllPages(`/${cid}/adsets`,{fields:'id,name,status,daily_budget,lifetime_budget,targeting,optimization_goal,billing_event,start_time,end_time',limit:100,access_token:S.token});}catch(e){toast('Erro: '+e.message,'error');}
+  // Tenta com todos os campos. Se falhar, retry sem targeting (que costuma dar Invalid parameter).
+  const fieldsFull='id,name,status,daily_budget,lifetime_budget,targeting,optimization_goal,billing_event,start_time,end_time,bid_strategy,bid_amount';
+  const fieldsBasic='id,name,status,daily_budget,lifetime_budget,optimization_goal,billing_event,start_time,end_time,bid_strategy';
+  try{
+    try{
+      S.campaignEditor.adsets=await fetchAllPages(`/${cid}/adsets`,{fields:fieldsFull,limit:100,access_token:S.token});
+    }catch(e1){
+      // Fallback: tenta sem targeting/bid_amount
+      console.warn('Adsets fetch full failed, retrying without targeting:',e1.message);
+      S.campaignEditor.adsets=await fetchAllPages(`/${cid}/adsets`,{fields:fieldsBasic,limit:100,access_token:S.token});
+      toast('Conjuntos carregados (modo compatibilidade)','info',2500);
+    }
+  }catch(e){
+    toast('Erro ao carregar conjuntos: '+e.message,'error',5000);
+    console.error('loadEditorAdsets error:',e);
+  }
   S.campaignEditor.adsetsLoading=false;R();
 }
 async function loadEditorAds(asid){
   S.campaignEditor.adsLoading=true;S.campaignEditor.ads=[];R();
-  try{S.campaignEditor.ads=await fetchAllPages(`/${asid}/ads`,{fields:'id,name,status,creative{id,body,title,thumbnail_url,object_story_spec}',limit:100,access_token:S.token});}catch(e){toast('Erro: '+e.message,'error');}
+  const fieldsFull='id,name,status,creative{id,body,title,thumbnail_url,object_story_spec}';
+  const fieldsBasic='id,name,status,creative{id,thumbnail_url}';
+  try{
+    try{
+      S.campaignEditor.ads=await fetchAllPages(`/${asid}/ads`,{fields:fieldsFull,limit:100,access_token:S.token});
+    }catch(e1){
+      console.warn('Ads fetch full failed, retrying basic:',e1.message);
+      S.campaignEditor.ads=await fetchAllPages(`/${asid}/ads`,{fields:fieldsBasic,limit:100,access_token:S.token});
+    }
+  }catch(e){
+    toast('Erro ao carregar anúncios: '+e.message,'error',5000);
+    console.error('loadEditorAds error:',e);
+  }
   S.campaignEditor.adsLoading=false;R();
 }
 async function saveCampaignEdit(id){
