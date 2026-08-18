@@ -253,7 +253,7 @@ const acctStatus = s => s === 1 ? '🟢' : s === 2 ? '🔴' : s ? '🟡' : '';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let S = {
-  view:'login', sub:'launch',
+  view:'login', sub:'launch', appUser:null, appAuthError:'',
   apiVersion:(JSON.parse(localStorage.getItem('globalSettings')||'{}').apiVersion)||'v21.0', token:'', appId:'', profile:null,
   bms:[], personalAccounts:[], selectedAccount:null, pages:[],
   campaigns:[], campaignsLoading:false, campaignToggling:{}, campaignSearch:'', campaignFilter:'all',
@@ -303,7 +303,7 @@ const R = () => {
   const fselEnd = ae?.selectionEnd;
   const fval = ae?.value;
   const scrollY = a.querySelector('[style*="overflow-y:auto"]')?.scrollTop;
-  a.innerHTML = S.view==='login' ? renderLogin() : renderMain();
+  a.innerHTML = S.view==='applogin' ? renderAppLogin() : S.view==='login' ? renderLogin() : renderMain();
   if (fid) {
     const el = document.getElementById(fid);
     if (el) {
@@ -469,6 +469,152 @@ document.addEventListener('click',function(e){
   for(const k in window._countryOpen){if(window._countryOpen[k]){window._countryOpen[k]=false;const dd=document.getElementById('country-dd-'+k);if(dd)dd.style.display='none';changed=true;}}
 });
 
+// ── APP AUTH (login de usuário do app, antes do Facebook) ──────────────────
+let appAuthMode=null; // null = automático (registro se não existe nenhum usuário)
+
+async function sha256Hex(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+// ── USUÁRIOS AUTORIZADOS (acesso restrito) ─────────────────────────────────
+// Quando esta lista tem entradas, o cadastro aberto é DESATIVADO e só quem
+// está aqui consegue entrar. Para gerar uma entrada: abra o app com #setup
+// na URL (ex: https://hyper-ads.vercel.app/#setup), preencha e copie o resultado.
+const APP_ALLOWED=[
+  // {email:'voce@email.com', name:'Seu Nome', salt:'…', hash:'…'},
+];
+// PBKDF2-SHA256 com 310k iterações — resiste a força-bruta mesmo com o hash visível no código
+async function pbkdf2Hex(password,saltHex,iterations=310000){
+  const enc=new TextEncoder();
+  const salt=new Uint8Array((saltHex.match(/../g)||[]).map(h=>parseInt(h,16)));
+  const key=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations},key,256);
+  return [...new Uint8Array(bits)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function generateAppUser(email,password,name){
+  const salt=[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,'0')).join('');
+  const hash=await pbkdf2Hex(password,salt);
+  const entry={email:(email||'').trim().toLowerCase(),name:(name||'').trim()||((email||'').split('@')[0]),salt,hash};
+  console.log('Adicione esta linha em APP_ALLOWED no index.html:\n'+JSON.stringify(entry)+',');
+  return entry;
+}
+async function genAccessSnippet(){
+  const email=document.getElementById('gen-email')?.value?.trim();
+  const name=document.getElementById('gen-name')?.value?.trim();
+  const pw=document.getElementById('gen-pw')?.value||'';
+  if(!email||pw.length<8){toast('Informe e-mail e senha com pelo menos 8 caracteres.','warning');return;}
+  const entry=await generateAppUser(email,pw,name);
+  const out=document.getElementById('gen-out');
+  if(out){out.style.display='block';out.value=JSON.stringify(entry)+',';out.focus();out.select();}
+  toast('Credencial gerada — copie e adicione em APP_ALLOWED.','success',4000);
+}
+function getAppUsers(){try{return JSON.parse(localStorage.getItem('appUsers')||'[]');}catch{return [];}}
+function getAppSession(){
+  try{
+    const ss=JSON.parse(localStorage.getItem('appSession')||'null');
+    if(ss&&ss.exp>Date.now())return ss;
+    if(ss)localStorage.removeItem('appSession');
+  }catch{}
+  return null;
+}
+function startAppSession(user,remember){
+  const exp=Date.now()+(remember?30*24*3600e3:12*3600e3);
+  localStorage.setItem('appSession',JSON.stringify({user:{id:user.id,name:user.name,email:user.email},exp}));
+  S.appUser={id:user.id,name:user.name,email:user.email};
+  S.appAuthError='';
+  toast('Bem-vindo, '+user.name+'!','success',2500);
+  S.view='login';R();
+  tryMetaAutoLogin();
+}
+async function appRegister(){
+  if(APP_ALLOWED.length){S.appAuthError='Cadastro desativado — o acesso é restrito a usuários autorizados.';R();return;}
+  const name=document.getElementById('app-name')?.value?.trim();
+  const email=(document.getElementById('app-email')?.value||'').trim().toLowerCase();
+  const pw=document.getElementById('app-pw')?.value||'';
+  const pw2=document.getElementById('app-pw2')?.value||'';
+  S.appAuthError='';
+  if(!name||name.length<2){S.appAuthError='Informe seu nome.';R();return;}
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){S.appAuthError='E-mail inválido.';R();return;}
+  if(pw.length<6){S.appAuthError='A senha deve ter pelo menos 6 caracteres.';R();return;}
+  if(pw!==pw2){S.appAuthError='As senhas não conferem.';R();return;}
+  const users=getAppUsers();
+  if(users.some(u=>u.email===email)){S.appAuthError='Já existe uma conta com este e-mail.';R();return;}
+  const salt=[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,'0')).join('');
+  const hash=await sha256Hex(salt+pw);
+  const user={id:Date.now().toString(36),name,email,salt,hash,createdAt:new Date().toISOString()};
+  users.push(user);localStorage.setItem('appUsers',JSON.stringify(users));
+  startAppSession(user,true);
+}
+async function appLogin(){
+  const email=(document.getElementById('app-email')?.value||'').trim().toLowerCase();
+  const pw=document.getElementById('app-pw')?.value||'';
+  S.appAuthError='';
+  const remember=document.getElementById('app-remember')?.checked!==false;
+  if(APP_ALLOWED.length){
+    // Modo restrito: apenas a lista embutida no código entra
+    const u=APP_ALLOWED.find(x=>x.email===email);
+    if(!u){S.appAuthError='E-mail não autorizado a acessar este app.';R();return;}
+    const hash=await pbkdf2Hex(pw,u.salt);
+    if(hash!==u.hash){S.appAuthError='Senha incorreta.';R();return;}
+    startAppSession({id:u.email,name:u.name||u.email.split('@')[0],email:u.email},remember);
+    return;
+  }
+  // Modo aberto (sem lista configurada): contas locais do navegador
+  const u=getAppUsers().find(x=>x.email===email);
+  if(!u){S.appAuthError='Conta não encontrada para este e-mail.';R();return;}
+  const hash=await sha256Hex(u.salt+pw);
+  if(hash!==u.hash){S.appAuthError='Senha incorreta.';R();return;}
+  startAppSession(u,remember);
+}
+function appLogout(){localStorage.removeItem('appSession');S.appUser=null;appAuthMode='login';S.view='applogin';R();}
+
+function renderAppLogin(){
+  const users=getAppUsers();
+  const restricted=APP_ALLOWED.length>0;
+  const mode=restricted?'login':(appAuthMode||(users.length?'login':'register'));
+  const setupMode=location.hash==='#setup';
+  const err=S.appAuthError?`<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:.625rem;padding:.625rem .875rem;font-size:.75rem;color:#dc2626;font-weight:600;">✗ ${esc(S.appAuthError)}</div>`:'';
+  const inputStyle='width:100%;border:1.5px solid #e2e8f0;border-radius:.625rem;padding:.625rem .875rem;font-size:.85rem;outline:none;background:white;color:#1a2440;';
+  const field=(label,id,type,ph)=>`<div><label style="display:block;font-size:.65rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.375rem;">${label}</label><input id="${id}" type="${type}" placeholder="${ph}" style="${inputStyle}" onfocus="this.style.borderColor='#1a2440'" onblur="this.style.borderColor='#e2e8f0'" onkeydown="if(event.key==='Enter')document.getElementById('app-auth-go')?.click()"/></div>`;
+  return `<div style="min-height:100vh;background:linear-gradient(160deg,#0f1729 0%,#1a2440 50%,#0f1729 100%);display:flex;align-items:center;justify-content:center;padding:1rem;">
+  <div style="width:100%;max-width:400px;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <img src="https://i.ibb.co/ZwcZDT6/HYPERADS-LOGO.png" alt="HyperAds" style="max-width:240px;width:100%;height:auto;margin:0 auto;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
+      <div style="display:none;width:56px;height:56px;background:#d7fa00;border-radius:14px;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:#1a2440;margin:0 auto 1rem;box-shadow:0 8px 24px rgba(215,250,0,.3);">H</div>
+      <p style="color:#8896ab;font-size:.8rem;margin:1rem 0 0;letter-spacing:.05em;">META ADS PLATFORM</p>
+    </div>
+    <div style="background:white;border-radius:1rem;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.3);">
+      <div style="padding:1.25rem 1.5rem;background:#1a2440;">
+        <h2 style="font-weight:800;margin:0;color:white;font-size:1.1rem;">${mode==='register'?(users.length?'Criar nova conta':'Bem-vindo! Crie sua conta'):'Entrar'}</h2>
+        <p style="font-size:.75rem;color:#8896ab;margin:.25rem 0 0;">${mode==='register'?'Sua conta de acesso ao HyperAds':restricted?'🔒 Acesso restrito a usuários autorizados':'Acesse com seu e-mail e senha'}</p>
+      </div>
+      <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+        ${err}
+        ${mode==='register'?field('Nome','app-name','text','Seu nome'):''}
+        ${field('E-mail','app-email','email','voce@email.com')}
+        ${field('Senha','app-pw','password','••••••••')}
+        ${mode==='register'?field('Confirmar senha','app-pw2','password','••••••••'):''}
+        ${mode==='login'?`<label style="display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:#64748b;cursor:pointer;"><input id="app-remember" type="checkbox" checked style="accent-color:#1a2440;"/>Manter conectado por 30 dias</label>`:''}
+        <button id="app-auth-go" onclick="${mode==='register'?'appRegister()':'appLogin()'}" style="width:100%;background:#d7fa00;color:#1a2440;border:none;border-radius:.75rem;padding:.75rem;font-weight:800;font-size:.85rem;cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='1'">${mode==='register'?'Criar conta →':'Entrar →'}</button>
+        ${!restricted&&users.length?`<button onclick="appAuthMode='${mode==='register'?'login':'register'}';S.appAuthError='';R()" style="background:transparent;border:none;color:#64748b;font-size:.75rem;cursor:pointer;text-decoration:underline;">${mode==='register'?'Já tenho conta — entrar':'Criar nova conta'}</button>`:''}
+      </div>
+    </div>
+    ${setupMode?`
+    <div style="background:rgba(255,255,255,.06);border:1px solid rgba(215,250,0,.3);border-radius:1rem;margin-top:1rem;padding:1.25rem;">
+      <p style="color:#d7fa00;font-weight:800;font-size:.85rem;margin:0 0 .25rem;">🔧 Gerador de acesso (modo setup)</p>
+      <p style="color:#8896ab;font-size:.7rem;margin:0 0 .875rem;">Gera a credencial (hash) para adicionar em APP_ALLOWED no index.html. A senha não sai deste navegador.</p>
+      <div style="display:flex;flex-direction:column;gap:.5rem;">
+        <input id="gen-name" type="text" placeholder="Nome" style="border:1.5px solid rgba(255,255,255,.15);border-radius:.5rem;padding:.5rem .75rem;font-size:.8rem;outline:none;background:rgba(255,255,255,.06);color:white;"/>
+        <input id="gen-email" type="email" placeholder="E-mail" style="border:1.5px solid rgba(255,255,255,.15);border-radius:.5rem;padding:.5rem .75rem;font-size:.8rem;outline:none;background:rgba(255,255,255,.06);color:white;"/>
+        <input id="gen-pw" type="password" placeholder="Senha forte (mín. 8 caracteres)" style="border:1.5px solid rgba(255,255,255,.15);border-radius:.5rem;padding:.5rem .75rem;font-size:.8rem;outline:none;background:rgba(255,255,255,.06);color:white;"/>
+        <button onclick="genAccessSnippet()" style="background:#d7fa00;color:#1a2440;border:none;border-radius:.5rem;padding:.625rem;font-weight:800;font-size:.8rem;cursor:pointer;">Gerar credencial</button>
+        <textarea id="gen-out" readonly style="display:none;border:1.5px solid rgba(215,250,0,.4);border-radius:.5rem;padding:.5rem .75rem;font-size:.65rem;font-family:monospace;background:rgba(0,0,0,.4);color:#d7fa00;min-height:80px;resize:vertical;"></textarea>
+      </div>
+    </div>`:''}
+    <p style="text-align:center;color:#8896ab;font-size:.65rem;margin-top:1.5rem;letter-spacing:.04em;">${restricted?'🔒 Acesso restrito · dados salvos apenas neste navegador':'Conta e dados salvos apenas neste navegador'}</p>
+  </div></div>`;
+}
+
 // ── LOGIN ──────────────────────────────────────────────────────────────────
 function renderLogin() {
   const ps = S.savedProfiles;
@@ -526,6 +672,7 @@ function renderLogin() {
       </div>
     </div>
     <p style="text-align:center;color:#8896ab;font-size:.65rem;margin-top:1.5rem;letter-spacing:.04em;">Dados salvos localmente · Batch API</p>
+    ${S.appUser?`<p style="text-align:center;color:#8896ab;font-size:.7rem;margin-top:.5rem;">👤 ${esc(S.appUser.name)} · <button onclick="appLogout()" style="background:transparent;border:none;color:#d7fa00;font-size:.7rem;cursor:pointer;padding:0;text-decoration:underline;">trocar usuário</button></p>`:''}
   </div></div>`;
 }
 
@@ -2074,7 +2221,7 @@ function renderSubAdsetPublishStep(){
       <p style="font-size:.875rem;color:var(--text-secondary);margin:0 0 1.25rem;">${w.createdAdsetId?'1 conjunto + ':''}${S.na} anúncio${S.na>1?'s':''} criado${S.na>1?'s':''} em "${esc(c.name)}"</p>
       <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;">
         <button onclick="closeSubAdsetWizard()" style="padding:.625rem 1.25rem;background:var(--accent);color:white;border:none;border-radius:.625rem;font-weight:700;font-size:.85rem;cursor:pointer;">Voltar à campanha</button>
-        <button onclick="(()=>{const cid=S.campaignEditor.subWizard.campaignId;closeSubAdsetWizard();setTimeout(()=>openSubAdsetWizard(cid),300);})()" style="padding:.625rem 1.25rem;background:transparent;color:#1a2440;border:1.5px solid var(--accent);border-radius:.625rem;font-weight:700;font-size:.85rem;cursor:pointer;">+ Criar outro conjunto</button>
+        <button onclick="(()=>{const cid=S.campaignEditor.subWizard.campaignId;closeSubAdsetWizard();setTimeout(()=>showNewAdsetQtyModal(cid),300);})()" style="padding:.625rem 1.25rem;background:transparent;color:#1a2440;border:1.5px solid var(--accent);border-radius:.625rem;font-weight:700;font-size:.85rem;cursor:pointer;">+ Criar outro conjunto</button>
       </div>
       ${w.pubErrors.length?`<div style="margin-top:1rem;background:#FEF2F2;border:1px solid #FECACA;border-radius:.625rem;padding:.875rem;text-align:left;">
         <p style="font-size:.75rem;font-weight:700;color:#DC2626;margin:0 0 .5rem;">Erros (${w.pubErrors.length}):</p>
@@ -2367,7 +2514,7 @@ function renderCampaignDetail(){
         ;}).join('')}
     </div>`}
 
-    <button onclick="openSubAdsetWizard('${cid}')" style="width:100%;padding:.75rem;border:1.5px dashed var(--accent);border-radius:.625rem;background:rgba(215,250,0,.08);color:#1a2440;font-weight:700;font-size:.85rem;cursor:pointer;margin-top:.75rem;">+ Novo Conjunto com Anúncios</button>`)}
+    <button onclick="showNewAdsetQtyModal('${cid}')" style="width:100%;padding:.75rem;border:1.5px dashed var(--accent);border-radius:.625rem;background:rgba(215,250,0,.08);color:#1a2440;font-weight:700;font-size:.85rem;cursor:pointer;margin-top:.75rem;">+ Novo Conjunto com Anúncios</button>`)}
 
     </div>
   </div></div>`;
@@ -2507,6 +2654,11 @@ function renderSettings() {
     ${card('🌙 Aparência','',`
     ${tog(S.darkMode,"toggleDarkMode()","Dark Mode","Tema escuro para a interface")}`)}
     ${card('🔐 Sessão','',`
+    ${S.appUser?`<div style="display:flex;align-items:center;gap:.75rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:.625rem;padding:.75rem;">
+      <div style="width:36px;height:36px;background:#d7fa00;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#1a2440;flex-shrink:0;">${esc((S.appUser.name||'?')[0])}</div>
+      <div style="flex:1;min-width:0;"><p style="font-size:.85rem;font-weight:700;color:var(--text-primary);margin:0;">${esc(S.appUser.name)}</p><p style="font-size:.7rem;color:var(--text-muted);margin:0;">${esc(S.appUser.email)}</p></div>
+      <button onclick="appLogout()" style="padding:.375rem .75rem;border:1.5px solid var(--border);border-radius:.5rem;background:transparent;color:#EF4444;font-size:.7rem;font-weight:700;cursor:pointer;flex-shrink:0;">Sair</button>
+    </div>`:''}
     ${tog(gs.autoLogin!==false,"toggleAutoLogin()","Auto-login","Conectar automaticamente com o último perfil ao abrir o app")}
     <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem;">
       <button onclick="if(confirm('Limpar todas as configurações salvas (chaves API, perfis Meta, templates, regras)? Essa ação não pode ser desfeita.')){localStorage.clear();toast('Tudo limpo. Recarregando...','success',2000);setTimeout(()=>location.reload(),1500);}" style="padding:.5rem 1rem;background:transparent;color:#EF4444;border:1.5px solid #EF4444;border-radius:.5rem;font-size:.75rem;font-weight:700;cursor:pointer;">🗑 Limpar todos os dados salvos</button>
@@ -3644,9 +3796,40 @@ async function createNewAdset(cid){
   S.campaignEditor.creatingAdset=false;R();
 }
 
-// ── Wizard de Novo Conjunto (mesmo formato do lançamento, mas para campanha existente)
-async function openSubAdsetWizard(cid){
+// Popup para definir a quantidade de anúncios do novo conjunto (desbloqueia o modo bulk)
+function showNewAdsetQtyModal(cid){
   const c=S.campaigns.find(x=>x.id===cid);if(!c){toast('Campanha não encontrada','error');return;}
+  const m=document.createElement('div');
+  m.id='adsqty-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  m.innerHTML=`<div style="background:var(--bg-card);border-radius:1rem;width:100%;max-width:400px;overflow:hidden;box-shadow:0 25px 50px rgba(0,0,0,.3);">
+    <div style="padding:1.25rem 1.5rem;background:#1a2440;">
+      <h3 style="font-weight:800;margin:0;color:white;font-size:1rem;">Novo Conjunto</h3>
+      <p style="font-size:.75rem;color:#8896ab;margin:.25rem 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">em "${esc(c.name)}"</p>
+    </div>
+    <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+      <div style="text-align:center;background:var(--bg-secondary);border-radius:.75rem;padding:1.25rem;border:1.5px solid var(--border);">
+        <p style="font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 .75rem;">Anúncios neste conjunto</p>
+        <input id="adsqty-input" type="number" min="1" max="30" value="1"
+          style="width:120px;text-align:center;font-size:2rem;font-weight:900;color:var(--text-primary);border:2px solid var(--border);border-radius:.75rem;padding:.5rem;outline:none;background:var(--bg-card);"
+          onfocus="this.style.borderColor='var(--accent)';this.select()" onblur="this.style.borderColor='var(--border)'"
+          onkeydown="if(event.key==='Enter')document.getElementById('adsqty-go').click()"/>
+        <p style="font-size:.7rem;color:var(--text-muted);margin:.5rem 0 0;">máx. 30 · com 2 ou mais você escolhe mídia e copy diferentes por anúncio (bulk)</p>
+      </div>
+      <div style="display:flex;gap:.75rem;">
+        <button onclick="document.getElementById('adsqty-modal').remove()" style="flex:1;padding:.75rem;border:1.5px solid var(--border);border-radius:.75rem;background:var(--bg-card);color:var(--text-secondary);font-weight:600;font-size:.875rem;cursor:pointer;">Cancelar</button>
+        <button id="adsqty-go" onclick="(()=>{const q=parseInt(document.getElementById('adsqty-input')?.value)||1;document.getElementById('adsqty-modal').remove();openSubAdsetWizard('${cid}',q);})()" style="flex:1;padding:.75rem;border:none;border-radius:.75rem;background:var(--accent);color:white;font-weight:700;font-size:.875rem;cursor:pointer;">Continuar →</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  setTimeout(()=>document.getElementById('adsqty-input')?.focus(),50);
+}
+
+// ── Wizard de Novo Conjunto (mesmo formato do lançamento, mas para campanha existente)
+async function openSubAdsetWizard(cid,adCount=1){
+  const c=S.campaigns.find(x=>x.id===cid);if(!c){toast('Campanha não encontrada','error');return;}
+  const na=Math.max(1,Math.min(30,parseInt(adCount)||1));
   // Snapshot do contexto do launch normal para restaurar depois
   S.campaignEditor.subWizardSnapshot={
     nc:S.nc,ns:S.ns,na:S.na,bulkStep:S.bulkStep,
@@ -3663,11 +3846,13 @@ async function openSubAdsetWizard(cid){
     pageMode:S.pageMode,editAdsPerAdset:S.editAdsPerAdset,adsetAds:S.adsetAds,
     campAdsetCreatives:JSON.parse(JSON.stringify(S.campAdsetCreatives||{})),
   };
-  // Configurar contexto isolado para novo conjunto
-  S.nc=1;S.ns=1;S.na=1;
+  // Configurar contexto isolado para novo conjunto (na = quantidade escolhida no popup)
+  S.nc=1;S.ns=1;S.na=na;
   S.campNames=[c.name||'Campanha'];
   S.campaignCreatives=[null];S.campaignPages=[null];
-  S.adsetCreatives=[];S.adCreatives=[];S.adCopies=[];
+  S.adsetCreatives=[];
+  S.adCreatives=Array.from({length:na},()=>null);
+  S.adCopies=Array.from({length:na},()=>({primaryText:'',headline:''}));
   S.creativeMode='single';S.adMediaMode='single';S.adCopyMode='single';
   S.pageMode='single';S.editAdsPerAdset=false;
   S.adsetAds={};S.campAdsetCreatives={};
@@ -3705,7 +3890,7 @@ async function openSubAdsetWizard(cid){
     pubRunning:false,pubFinished:false,pubLog:[],pubErrors:[],
     createdAdsetId:null
   };
-  toast('Configurações da campanha "'+c.name+'" carregadas','success',2500);
+  toast('Configurações da campanha "'+c.name+'" carregadas · '+na+' anúncio'+(na>1?'s':'')+' no conjunto','success',2500);
   R();
 }
 
@@ -4388,10 +4573,20 @@ function matchOrdersToCampaigns(orders,campaigns){
 }
 
 if(S.darkMode)document.body.classList.add('dark');
+
+// Re-renderiza quando o hash muda (ex.: usuário adiciona #setup na URL com o app aberto)
+window.addEventListener('hashchange',()=>{if(S.view==='applogin')R();});
+
+// Sessão do usuário do app: sem sessão válida, o login do app vem antes do Facebook
+(function initAppAuth(){
+  const sess=getAppSession();
+  if(sess)S.appUser=sess.user;
+  else S.view='applogin';
+})();
 R();
 
-// Auto-login no último perfil usado (se preferência ativa)
-(function autoLogin(){
+// Auto-login no último perfil Meta usado (só roda quando a view é 'login', ou seja, após o login do app)
+function tryMetaAutoLogin(){
   try{
     const gs=JSON.parse(localStorage.getItem('globalSettings')||'{}');
     if(gs.autoLogin===false)return; // desativado pelo usuário
@@ -4407,7 +4602,8 @@ R();
       },300);
     }
   }catch{}
-})();
+}
+tryMetaAutoLogin();
 </script>
 </body>
 </html>
