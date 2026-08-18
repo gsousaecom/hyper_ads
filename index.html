@@ -481,7 +481,8 @@ async function sha256Hex(str){
 // está aqui consegue entrar. Para gerar uma entrada: abra o app com #setup
 // na URL (ex: https://hyper-ads.vercel.app/#setup), preencha e copie o resultado.
 const APP_ALLOWED=[
-  // {email:'voce@email.com', name:'Seu Nome', salt:'…', hash:'…'},
+  {email:'gsousa.ecom@gmail.com', name:'Gustavo', salt:'9f16838034ae79a53a57fe6db8894cb8', hash:'a3d8f5e8054c203fa7edfa768c50aae17ccd257323fde3a47b6c5ece26283917'},
+  {email:'hyperscale.br@gmail.com', name:'Hyperscale', salt:'034b16e8c4c1a1332ba1087a8059c271', hash:'ee1a6308ddf225f7480b8c7decc142ed77c6eb64445ecc621eabc233c1edfe48'},
 ];
 // PBKDF2-SHA256 com 310k iterações — resiste a força-bruta mesmo com o hash visível no código
 async function pbkdf2Hex(password,saltHex,iterations=310000){
