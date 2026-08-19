@@ -251,6 +251,19 @@ const normCountry = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]
 
 const acctStatus = s => s === 1 ? '🟢' : s === 2 ? '🔴' : s ? '🟡' : '';
 
+// Data de hoje no formato dd/mm — prefixo padrão dos nomes de conjunto
+const todayPrefix = () => { const d=new Date(); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; };
+// Garante S.adsetNames com S.ns entradas; vazios recebem "dd/mm — NN"
+function ensureAdsetNames(){
+  const pfx=todayPrefix();
+  S.adsetNames=Array.from({length:S.ns},(_,i)=>S.adsetNames[i]!==undefined?S.adsetNames[i]:`${pfx} — ${String(i+1).padStart(2,'0')}`);
+}
+function autofillAdsets(){
+  const p=(document.getElementById('adset-prefix')?.value||'').trim();
+  if(!p){toast('Digite um prefixo primeiro.','warning');return;}
+  S.adsetNames=Array.from({length:S.ns},(_,i)=>`${p} — ${String(i+1).padStart(2,'0')}`);R();
+}
+
 // ── State ──────────────────────────────────────────────────────────────────
 let S = {
   view:'login', sub:'launch', appUser:null, appAuthError:'',
@@ -271,7 +284,8 @@ let S = {
   pageMode:'single', campaignPages:[],
   cc:{ objective:'OUTCOME_SALES', specialCat:'Nenhuma', cbo:false, cboBudgetType:'daily_budget', cboBudget:'', status:'PAUSED', bidStrategy:'LOWEST_COST_WITHOUT_CAP', bidAmount:'' },
   ds:{ budgetType:'daily_budget', budget:'', bidAmount:'', startTime:'', endTime:'', convLocation:'WEBSITE', pixelId:'', customEventType:'PURCHASE', ageMin:18, ageMax:65, genders:'all', countries:'US', detailedTargeting:'', placementMode:'auto', advantageAudience:true },
-  adsetPrefix:'AdSet',
+  adsetPrefix:'',
+  adsetNames:[],
   da:{ name:'', pageId:'', pageName:'', mediaType:'image', imageUrl:'', imageHash:'', videoId:'', videoThumb:'', videoTitle:'', primaryTexts:[''], headlines:[''], linkUrl:'', urlParams:'utm_source=facebook&utm_medium={{placement}}&utm_campaign={{campaign.name}}&utm_content={{adset.name}}', cta:'SHOP_NOW' },
   pubLog:[], pubRunning:false, pubFinished:false, pubDone:0, pubTotal:0, pubErrors:[],
   templates:[], rules:[],
@@ -1298,7 +1312,7 @@ function renderS0() {
     <div style="text-align:center;background:var(--bg-secondary);border-radius:.75rem;padding:1.25rem;border:1.5px solid var(--border);">
       <p style="font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 .75rem;">${l}</p>
       <input type="number" min="1" max="${mx}" value="${S[f]}"
-        oninput="S['${f}']=Math.max(1,Math.min(${mx},+this.value));if('${f}'==='nc'){S.campNames=Array.from({length:S.nc},(_,i)=>S.campNames[i]||('Campanha '+(i+1).toString().padStart(2,'0')));S.campaignCreatives=Array.from({length:S.nc},(_,i)=>S.campaignCreatives[i]!==undefined?S.campaignCreatives[i]:null);S.campaignPages=Array.from({length:S.nc},(_,i)=>S.campaignPages[i]||null)}if('${f}'==='ns'){S.adsetCreatives=Array.from({length:S.ns},(_,i)=>S.adsetCreatives[i]||null)}if('${f}'==='na'){S.adCreatives=Array.from({length:S.na},(_,i)=>S.adCreatives[i]||null);S.adCopies=Array.from({length:S.na},(_,i)=>S.adCopies[i]||null)}"
+        oninput="S['${f}']=Math.max(1,Math.min(${mx},+this.value));if('${f}'==='nc'){S.campNames=Array.from({length:S.nc},(_,i)=>S.campNames[i]||('Campanha '+(i+1).toString().padStart(2,'0')));S.campaignCreatives=Array.from({length:S.nc},(_,i)=>S.campaignCreatives[i]!==undefined?S.campaignCreatives[i]:null);S.campaignPages=Array.from({length:S.nc},(_,i)=>S.campaignPages[i]||null)}if('${f}'==='ns'){S.adsetCreatives=Array.from({length:S.ns},(_,i)=>S.adsetCreatives[i]||null);ensureAdsetNames()}if('${f}'==='na'){S.adCreatives=Array.from({length:S.na},(_,i)=>S.adCreatives[i]||null);S.adCopies=Array.from({length:S.na},(_,i)=>S.adCopies[i]||null)}"
         style="width:100%;text-align:center;font-size:2rem;font-weight:900;color:var(--text-primary);border:2px solid var(--border-light);border-radius:.75rem;padding:.5rem;outline:none;background:var(--bg-card);"
         onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border-light)'"/>
       <p style="font-size:.7rem;color:var(--text-muted);margin:.5rem 0 0;">máx. ${mx}</p>
@@ -1383,13 +1397,22 @@ function renderS2() {
     </div>`}
   </div>`;
 
+  ensureAdsetNames();
   return `
-  ${card('Prefixo dos Conjuntos','',`
-  <div style="display:flex;gap:.75rem;align-items:center;">
-    <input id="adset-prefix" value="${esc(S.adsetPrefix)}" oninput="S.adsetPrefix=this.value"
-      style="flex:1;border:1.5px solid var(--border);border-radius:.5rem;padding:.625rem .75rem;font-size:.875rem;outline:none;"
-      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"/>
-    <div style="font-size:.75rem;color:var(--text-muted);background:var(--bg-secondary);border:1px solid var(--border);border-radius:.5rem;padding:.625rem .875rem;white-space:nowrap;font-family:monospace;">${esc(S.adsetPrefix)} ${esc(S.campNames[0]||'Camp 01')} — 001</div>
+  ${card('Nomes dos Conjuntos',S.nc>1?'Os mesmos nomes são usados em cada uma das '+S.nc+' campanhas':'',`
+  <div style="display:flex;gap:.5rem;margin-bottom:.5rem;">
+    <input id="adset-prefix" placeholder="Prefixo para auto-preencher" value="${esc(S.adsetPrefix||todayPrefix())}" oninput="S.adsetPrefix=this.value" style="flex:1;border:1.5px solid var(--border);border-radius:.5rem;padding:.5rem .75rem;font-size:.875rem;outline:none;"/>
+    <button onclick="autofillAdsets()" style="padding:.5rem 1rem;background:var(--accent);color:white;border:none;border-radius:.5rem;font-weight:600;font-size:.8rem;cursor:pointer;">Preencher</button>
+  </div>
+  <p style="font-size:.65rem;color:var(--text-muted);margin:0 0 .5rem;">Prefixo padrão: data de hoje (${todayPrefix()}). Ex.: <span style="font-family:monospace;">${todayPrefix()} — 01</span></p>
+  <div style="display:flex;flex-direction:column;gap:.375rem;max-height:260px;overflow-y:auto;">
+    ${S.adsetNames.map((n,i)=>`
+    <div style="display:flex;align-items:center;gap:.625rem;">
+      <span style="font-size:.75rem;font-weight:700;color:var(--text-muted);width:28px;text-align:right;flex-shrink:0;">#${i+1}</span>
+      <input id="adset-name-${i}" value="${esc(n)}" oninput="S.adsetNames[${i}]=this.value"
+        style="flex:1;border:1.5px solid var(--border);border-radius:.5rem;padding:.5rem .75rem;font-size:.875rem;outline:none;"
+        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"/>
+    </div>`).join('')}
   </div>`)}
   ${card('Configurações dos Conjuntos','Aplicadas a todos os conjuntos',`
   ${useCbo?`<div style="background:rgba(215,250,0,.08);border:1px solid rgba(215,250,0,.3);border-radius:.625rem;padding:.625rem .875rem;font-size:.75rem;color:#1a2440;"><strong>ℹ️ Orçamento no nível da campanha (CBO)</strong> — os conjuntos não precisam de budget individual.</div>`:''}
@@ -2257,7 +2280,7 @@ function renderS4() {
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem;">
     ${[
       {label:'Campanha',rows:[['Campanhas',S.nc],['Objetivo',OBJECTIVES.find(o=>o.id===S.cc.objective)?.label],['Status',S.cc.status],['Modo creative',mode==='single'?'📌 Único':mode==='per_adset'?'📦 Por conjunto':mode==='per_campaign_adset'?'🎯 Matriz':'🎨 Por campanha']]},
-      {label:'Conjunto',rows:[['Por campanha',S.ns],['Total',(S.nc*S.ns).toLocaleString()],['Prefixo',esc(S.adsetPrefix)],['Países',esc(S.ds.countries)]]},
+      {label:'Conjunto',rows:[['Por campanha',S.ns],['Total',(S.nc*S.ns).toLocaleString()],['Nomes',esc((S.adsetNames||[]).slice(0,2).join(', ')+(S.ns>2?' …':''))],['Países',esc(S.ds.countries)]]},
       {label:'Anúncio',rows:[['Por conjunto',S.na],['Total',(S.nc*S.ns*S.na).toLocaleString()],['Mídia',da.mediaType==='video'?'🎬 Vídeo':'🖼 Imagem'],['Página',S.pageMode==='per_campaign'&&S.nc>1?'📄 Por campanha':esc(da.pageName||da.pageId||'—')]]},
     ].map(sec=>`
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1rem;box-shadow:0 1px 3px rgba(0,0,0,.05);">
@@ -3423,6 +3446,8 @@ function validateStepType(info){
     if(new Set(S.campNames.map(n=>n.trim())).size!==S.campNames.length)errs.push('Nomes de campanha devem ser únicos.');
   }
   if(info.type==='conjunto'){
+    ensureAdsetNames();
+    if(S.adsetNames.some(n=>!n.trim()))errs.push('Todos os nomes de conjunto devem ser preenchidos.');
     if(!S.cc.cbo&&(!S.ds.budget||parseFloat(S.ds.budget)<1))errs.push('Orçamento mínimo: $1/dia.');
     if(S.cc.objective==='OUTCOME_SALES'&&!S.ds.pixelId)errs.push('Pixel obrigatório para objetivo Vendas.');
     if(!S.ds.countries.trim())errs.push('Informe pelo menos um país.');
@@ -3837,7 +3862,7 @@ async function openSubAdsetWizard(cid,adCount=1){
     cc:JSON.parse(JSON.stringify(S.cc)),
     ds:JSON.parse(JSON.stringify(S.ds)),
     da:JSON.parse(JSON.stringify(S.da)),
-    campNames:[...S.campNames],
+    campNames:[...S.campNames],adsetNames:[...(S.adsetNames||[])],adsetPrefix:S.adsetPrefix,
     campaignCreatives:[...S.campaignCreatives],
     campaignPages:[...S.campaignPages],
     adsetCreatives:[...S.adsetCreatives],
@@ -3850,6 +3875,7 @@ async function openSubAdsetWizard(cid,adCount=1){
   // Configurar contexto isolado para novo conjunto (na = quantidade escolhida no popup)
   S.nc=1;S.ns=1;S.na=na;
   S.campNames=[c.name||'Campanha'];
+  S.adsetNames=[`${todayPrefix()} — 01`];S.adsetPrefix='';
   S.campaignCreatives=[null];S.campaignPages=[null];
   S.adsetCreatives=[];
   S.adCreatives=Array.from({length:na},()=>null);
@@ -3900,7 +3926,7 @@ function closeSubAdsetWizard(){
   if(snap){
     S.nc=snap.nc;S.ns=snap.ns;S.na=snap.na;S.bulkStep=snap.bulkStep;
     S.cc=snap.cc;S.ds=snap.ds;S.da=snap.da;
-    S.campNames=snap.campNames;S.campaignCreatives=snap.campaignCreatives;
+    S.campNames=snap.campNames;S.adsetNames=snap.adsetNames||[];S.adsetPrefix=snap.adsetPrefix||'';S.campaignCreatives=snap.campaignCreatives;
     S.campaignPages=snap.campaignPages;S.adsetCreatives=snap.adsetCreatives;
     S.adCreatives=snap.adCreatives;S.adCopies=snap.adCopies;
     S.creativeMode=snap.creativeMode;S.adMediaMode=snap.adMediaMode;S.adCopyMode=snap.adCopyMode;
@@ -3954,7 +3980,7 @@ async function publishSubAdset(){
     };
     const og=OBJ_OPTIM[cc.objective],dt=OBJ_DEST[cc.objective];
     const bidStrategy=cc.bidStrategy||'LOWEST_COST_WITHOUT_CAP';
-    const asetName=`${S.adsetPrefix||'AdSet'} ${w.campaign.name||'Camp'} — ${new Date().toISOString().slice(0,10)}`.slice(0,255);
+    const asetName=(S.adsetNames[0]||`${todayPrefix()} — 01`).slice(0,255);
     const asetBody={
       _method:'POST',access_token:S.token,
       name:asetName,campaign_id:cid,
@@ -4206,7 +4232,7 @@ async function startPub(){
         const tg={age_min:Math.max(18,ds.ageMin),age_max:Math.min(65,ds.ageMax),geo_locations:{countries:ds.countries.split(',').map(s=>s.trim()).filter(Boolean)||['US']},...(ds.genders==='female'?{genders:[2]}:ds.genders==='male'?{genders:[1]}:{}),...(ds.detailedTargeting?{flexible_spec:[{interests:ds.detailedTargeting.split(',').map(s=>({name:s.trim()}))}]}:{}),targeting_automation:{advantage_audience:ds.advantageAudience?1:0}};
         const og=OBJ_OPTIM[cc.objective],dt=OBJ_DEST[cc.objective];
         const bidStrategy=cc.bidStrategy||'LOWEST_COST_WITHOUT_CAP';
-        const b={name:`${S.adsetPrefix} ${S.campNames[ci]||`C${ci+1}`} — ${String(si+1).padStart(3,'0')}`.slice(0,255),campaign_id:cid,billing_event:OBJ_BILLING[cc.objective],optimization_goal:og,bid_strategy:bidStrategy,status:cc.status,targeting:tg,...(dt!=='UNDEFINED'?{destination_type:dt}:{}),...(og==='OFFSITE_CONVERSIONS'?{attribution_spec:JSON.stringify([{event_type:'CLICK_THROUGH',window_days:7}])}:{})};
+        const b={name:(S.adsetNames[si]||`${todayPrefix()} — ${String(si+1).padStart(2,'0')}`).slice(0,255),campaign_id:cid,billing_event:OBJ_BILLING[cc.objective],optimization_goal:og,bid_strategy:bidStrategy,status:cc.status,targeting:tg,...(dt!=='UNDEFINED'?{destination_type:dt}:{}),...(og==='OFFSITE_CONVERSIONS'?{attribution_spec:JSON.stringify([{event_type:'CLICK_THROUGH',window_days:7}])}:{})};
         // Bid amount: prefer adset-level (ds.bidAmount), fallback to campaign-level (cc.bidAmount)
         const effBidAmount=ds.bidAmount||cc.bidAmount;
         if((bidStrategy==='LOWEST_COST_WITH_BID_CAP'||bidStrategy==='COST_CAP')&&effBidAmount){
