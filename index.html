@@ -2196,15 +2196,28 @@ function renderS3ForAdset(si){
 }
 
 // Wizard de criação de novo conjunto em campanha existente
+// Steps do sub-wizard: Conjunto → Anúncio (ou 1 por conjunto se editAdsPerAdset) → Publicar
+function getSubWizardSteps(){
+  const adSteps=(S.editAdsPerAdset&&S.ns>1)?Array.from({length:S.ns},(_,i)=>`Anúncio Conj ${i+1}`):['Anúncio'];
+  return ['Conjunto',...adSteps,'Publicar'];
+}
+function getSubWizardStepInfo(idx){
+  const steps=getSubWizardSteps();
+  if(idx<=0)return {type:'conjunto',adsetIdx:-1};
+  if(idx>=steps.length-1)return {type:'publicar',adsetIdx:-1};
+  return {type:'anuncio',adsetIdx:(S.editAdsPerAdset&&S.ns>1)?idx-1:-1};
+}
 function renderSubAdsetWizard(){
   const w=S.campaignEditor.subWizard;if(!w)return '';
   const c=w.campaign;
-  const STEPS=['Conjunto','Anúncio','Publicar'];
+  const STEPS=getSubWizardSteps();
+  if((w.step||0)>=STEPS.length)w.step=STEPS.length-1;
   const step=w.step||0;
+  const info=getSubWizardStepInfo(step);
   let body='';
-  if(step===0){body=renderS2();}
-  else if(step===1){body=renderS3(-1);}
-  else if(step===2){body=renderSubAdsetPublishStep();}
+  if(info.type==='conjunto'){body=renderS2();}
+  else if(info.type==='anuncio'){body=renderS3(info.adsetIdx);}
+  else{body=renderSubAdsetPublishStep();}
 
   const stepperHtml=STEPS.map((s,i)=>{
     const done=i<step,active=i===step;
@@ -2219,17 +2232,17 @@ function renderSubAdsetWizard(){
       <div style="display:flex;align-items:center;gap:.75rem;min-width:0;">
         <button onclick="if(confirm('Cancelar criação do novo conjunto? Mudanças serão perdidas.')){closeSubAdsetWizard();}" style="background:transparent;border:none;color:#1a2440;cursor:pointer;font-size:1rem;font-weight:700;">←</button>
         <div style="min-width:0;">
-          <p style="font-size:.65rem;color:var(--text-muted);margin:0;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">Novo Conjunto em</p>
+          <p style="font-size:.65rem;color:var(--text-muted);margin:0;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">${S.ns>1?S.ns+' novos conjuntos em':'Novo Conjunto em'}</p>
           <h2 style="font-weight:800;font-size:1rem;margin:.125rem 0 0;color:#1a2440;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.name||'Campanha')}</h2>
         </div>
       </div>
       <div style="display:flex;gap:.25rem;background:var(--border-light);border-radius:.75rem;padding:.25rem;overflow-x:auto;">${stepperHtml}</div>
     </div>
     <div style="flex:1;overflow-y:auto;padding:1.5rem;"><div style="max-width:800px;margin:0 auto;">${body}</div></div>
-    ${step<2?`<div style="padding:1rem 1.5rem;border-top:1px solid var(--border);background:var(--bg-card);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    ${step<STEPS.length-1?`<div style="padding:1rem 1.5rem;border-top:1px solid var(--border);background:var(--bg-card);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
       <button onclick="setSubWizardStep(${step-1})" ${step===0?'disabled':''} style="padding:.625rem 1.25rem;border:1.5px solid var(--border);border-radius:.75rem;background:var(--bg-card);color:var(--text-secondary);font-weight:600;font-size:.875rem;cursor:${step===0?'default':'pointer'};opacity:${step===0?'.4':'1'};">← Anterior</button>
       <span style="font-size:.75rem;color:var(--text-muted);">${step+1} / ${STEPS.length}</span>
-      <button onclick="nextSubWizardStep()" style="padding:.625rem 1.5rem;border:none;border-radius:.75rem;background:var(--accent);color:white;font-weight:700;font-size:.875rem;cursor:pointer;">${step===1?'Revisar →':'Próximo →'}</button>
+      <button onclick="nextSubWizardStep()" style="padding:.625rem 1.5rem;border:none;border-radius:.75rem;background:var(--accent);color:white;font-weight:700;font-size:.875rem;cursor:pointer;">${step===STEPS.length-2?'Revisar →':'Próximo →'}</button>
     </div>`:''}
   </div>`;
 }
@@ -2242,7 +2255,7 @@ function renderSubAdsetPublishStep(){
     return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.875rem;padding:1.5rem;text-align:center;">
       <div style="font-size:3rem;margin-bottom:.75rem;">${w.pubErrors.length?'⚠️':'🎉'}</div>
       <h3 style="font-size:1.25rem;font-weight:800;margin:0 0 .5rem;color:${okColor};">${w.pubErrors.length?'Concluído com avisos':'Conjunto criado com sucesso!'}</h3>
-      <p style="font-size:.875rem;color:var(--text-secondary);margin:0 0 1.25rem;">${w.createdAdsetId?'1 conjunto + ':''}${S.na} anúncio${S.na>1?'s':''} criado${S.na>1?'s':''} em "${esc(c.name)}"</p>
+      <p style="font-size:.875rem;color:var(--text-secondary);margin:0 0 1.25rem;">${w.adsetsOk||0}/${w.adsetsTotal||S.ns} conjunto${(w.adsetsTotal||S.ns)>1?'s':''} + ${w.adsOk||0}/${w.adsTotal||S.ns*S.na} anúncio${(w.adsTotal||S.ns*S.na)>1?'s':''} criado${(w.adsTotal||S.ns*S.na)>1?'s':''} em "${esc(c.name)}"</p>
       <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;">
         <button onclick="closeSubAdsetWizard()" style="padding:.625rem 1.25rem;background:var(--accent);color:white;border:none;border-radius:.625rem;font-weight:700;font-size:.85rem;cursor:pointer;">Voltar à campanha</button>
         <button onclick="(()=>{const cid=S.campaignEditor.subWizard.campaignId;closeSubAdsetWizard();setTimeout(()=>showNewAdsetQtyModal(cid),300);})()" style="padding:.625rem 1.25rem;background:transparent;color:#1a2440;border:1.5px solid var(--accent);border-radius:.625rem;font-weight:700;font-size:.85rem;cursor:pointer;">+ Criar outro conjunto</button>
@@ -2260,13 +2273,14 @@ function renderSubAdsetPublishStep(){
       <div style="display:flex;flex-direction:column;gap:.375rem;">
         <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Campanha</span><span style="font-weight:600;color:#1a2440;text-align:right;">${esc(c.name)}</span></div>
         <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Status do conjunto</span><span style="font-weight:600;color:#1a2440;">${S.cc.status}</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Anúncios</span><span style="font-weight:600;color:#1a2440;">${S.na}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Conjuntos</span><span style="font-weight:600;color:#1a2440;">${S.ns}${S.editAdsPerAdset&&S.ns>1?' · anúncios editados por conjunto':''}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Anúncios</span><span style="font-weight:600;color:#1a2440;">${S.na} por conjunto · ${S.ns*S.na} no total</span></div>
         ${!S.cc.cbo&&S.ds.budget?`<div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Budget</span><span style="font-weight:600;color:#1a2440;">$${parseFloat(S.ds.budget).toFixed(2)} ${S.ds.budgetType==='daily_budget'?'/dia':'total'}</span></div>`:''}
         <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Página</span><span style="font-weight:600;color:#1a2440;">${esc(S.da.pageName||S.da.pageId||'—')}</span></div>
         <div style="display:flex;justify-content:space-between;font-size:.8rem;gap:1rem;"><span style="color:var(--text-muted);">URL</span><span style="font-weight:600;color:#1a2440;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%;">${esc(S.da.linkUrl||'—')}</span></div>
       </div>
     </div>
-    ${!w.pubRunning?`<button onclick="publishSubAdset()" style="width:100%;padding:.875rem;background:var(--accent);color:white;border:none;border-radius:.75rem;font-weight:800;font-size:.95rem;cursor:pointer;">⚡ Criar conjunto + ${S.na} anúncio${S.na>1?'s':''}</button>`:`<div style="display:flex;align-items:center;justify-content:center;padding:.875rem;background:rgba(215,250,0,.15);border-radius:.75rem;gap:.5rem;color:#1a2440;font-weight:700;"><div style="width:16px;height:16px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;" class="spin"></div>Publicando...</div>`}
+    ${!w.pubRunning?`<button onclick="publishSubAdset()" style="width:100%;padding:.875rem;background:var(--accent);color:white;border:none;border-radius:.75rem;font-weight:800;font-size:.95rem;cursor:pointer;">⚡ Criar ${S.ns} conjunto${S.ns>1?'s':''} + ${S.ns*S.na} anúncio${S.ns*S.na>1?'s':''}</button>`:`<div style="display:flex;align-items:center;justify-content:center;padding:.875rem;background:rgba(215,250,0,.15);border-radius:.75rem;gap:.5rem;color:#1a2440;font-weight:700;"><div style="width:16px;height:16px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;" class="spin"></div>Publicando...</div>`}
     ${w.pubLog.length?`<div style="background:#020617;border-radius:.625rem;padding:.625rem;font-family:monospace;font-size:.7rem;max-height:200px;overflow-y:auto;margin-top:.75rem;color:#94A3B8;display:flex;flex-direction:column;gap:.125rem;">
       ${w.pubLog.slice(-30).map(l=>`<span style="color:${l.t==='error'?'#EF4444':l.t==='success'?'#22C55E':l.t==='loading'?'#F59E0B':'#94A3B8'};">${esc(l.m)}</span>`).join('')}
     </div>`:''}
@@ -3834,28 +3848,40 @@ function showNewAdsetQtyModal(cid){
       <p style="font-size:.75rem;color:#8896ab;margin:.25rem 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">em "${esc(c.name)}"</p>
     </div>
     <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
-      <div style="text-align:center;background:var(--bg-secondary);border-radius:.75rem;padding:1.25rem;border:1.5px solid var(--border);">
-        <p style="font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 .75rem;">Anúncios neste conjunto</p>
-        <input id="adsqty-input" type="number" min="1" max="30" value="1"
-          style="width:120px;text-align:center;font-size:2rem;font-weight:900;color:var(--text-primary);border:2px solid var(--border);border-radius:.75rem;padding:.5rem;outline:none;background:var(--bg-card);"
-          onfocus="this.style.borderColor='var(--accent)';this.select()" onblur="this.style.borderColor='var(--border)'"
-          onkeydown="if(event.key==='Enter')document.getElementById('adsqty-go').click()"/>
-        <p style="font-size:.7rem;color:var(--text-muted);margin:.5rem 0 0;">máx. 30 · com 2 ou mais você escolhe mídia e copy diferentes por anúncio (bulk)</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+        <div style="text-align:center;background:var(--bg-secondary);border-radius:.75rem;padding:1rem;border:1.5px solid var(--border);">
+          <p style="font-size:.65rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 .625rem;">Conjuntos</p>
+          <input id="adsetqty-input" type="number" min="1" max="100" value="1"
+            style="width:100%;text-align:center;font-size:1.75rem;font-weight:900;color:var(--text-primary);border:2px solid var(--border);border-radius:.75rem;padding:.5rem;outline:none;background:var(--bg-card);"
+            onfocus="this.style.borderColor='var(--accent)';this.select()" onblur="this.style.borderColor='var(--border)'"
+            onkeydown="if(event.key==='Enter')document.getElementById('adsqty-go').click()"/>
+          <p style="font-size:.65rem;color:var(--text-muted);margin:.5rem 0 0;">máx. 100</p>
+        </div>
+        <div style="text-align:center;background:var(--bg-secondary);border-radius:.75rem;padding:1rem;border:1.5px solid var(--border);">
+          <p style="font-size:.65rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 .625rem;">Anúncios / conj.</p>
+          <input id="adsqty-input" type="number" min="1" max="30" value="1"
+            style="width:100%;text-align:center;font-size:1.75rem;font-weight:900;color:var(--text-primary);border:2px solid var(--border);border-radius:.75rem;padding:.5rem;outline:none;background:var(--bg-card);"
+            onfocus="this.style.borderColor='var(--accent)';this.select()" onblur="this.style.borderColor='var(--border)'"
+            onkeydown="if(event.key==='Enter')document.getElementById('adsqty-go').click()"/>
+          <p style="font-size:.65rem;color:var(--text-muted);margin:.5rem 0 0;">máx. 30</p>
+        </div>
       </div>
+      <p style="font-size:.7rem;color:var(--text-muted);margin:0;text-align:center;">Com 2+ conjuntos você pode editar os anúncios de cada conjunto separadamente (opção no passo Conjunto). Com 2+ anúncios, mídia e copy diferentes por anúncio (bulk).</p>
       <div style="display:flex;gap:.75rem;">
         <button onclick="document.getElementById('adsqty-modal').remove()" style="flex:1;padding:.75rem;border:1.5px solid var(--border);border-radius:.75rem;background:var(--bg-card);color:var(--text-secondary);font-weight:600;font-size:.875rem;cursor:pointer;">Cancelar</button>
-        <button id="adsqty-go" onclick="(()=>{const q=parseInt(document.getElementById('adsqty-input')?.value)||1;document.getElementById('adsqty-modal').remove();openSubAdsetWizard('${cid}',q);})()" style="flex:1;padding:.75rem;border:none;border-radius:.75rem;background:var(--accent);color:white;font-weight:700;font-size:.875rem;cursor:pointer;">Continuar →</button>
+        <button id="adsqty-go" onclick="(()=>{const q=parseInt(document.getElementById('adsqty-input')?.value)||1;const qs=parseInt(document.getElementById('adsetqty-input')?.value)||1;document.getElementById('adsqty-modal').remove();openSubAdsetWizard('${cid}',q,qs);})()" style="flex:1;padding:.75rem;border:none;border-radius:.75rem;background:var(--accent);color:white;font-weight:700;font-size:.875rem;cursor:pointer;">Continuar →</button>
       </div>
     </div>
   </div>`;
   document.body.appendChild(m);
-  setTimeout(()=>document.getElementById('adsqty-input')?.focus(),50);
+  setTimeout(()=>document.getElementById('adsetqty-input')?.focus(),50);
 }
 
 // ── Wizard de Novo Conjunto (mesmo formato do lançamento, mas para campanha existente)
-async function openSubAdsetWizard(cid,adCount=1){
+async function openSubAdsetWizard(cid,adCount=1,adsetCount=1){
   const c=S.campaigns.find(x=>x.id===cid);if(!c){toast('Campanha não encontrada','error');return;}
   const na=Math.max(1,Math.min(30,parseInt(adCount)||1));
+  const ns=Math.max(1,Math.min(100,parseInt(adsetCount)||1));
   // Snapshot do contexto do launch normal para restaurar depois
   S.campaignEditor.subWizardSnapshot={
     nc:S.nc,ns:S.ns,na:S.na,bulkStep:S.bulkStep,
@@ -3873,11 +3899,11 @@ async function openSubAdsetWizard(cid,adCount=1){
     campAdsetCreatives:JSON.parse(JSON.stringify(S.campAdsetCreatives||{})),
   };
   // Configurar contexto isolado para novo conjunto (na = quantidade escolhida no popup)
-  S.nc=1;S.ns=1;S.na=na;
+  S.nc=1;S.ns=ns;S.na=na;
   S.campNames=[c.name||'Campanha'];
-  S.adsetNames=[`${todayPrefix()} — 01`];S.adsetPrefix='';
+  S.adsetNames=[];S.adsetPrefix='';ensureAdsetNames();
   S.campaignCreatives=[null];S.campaignPages=[null];
-  S.adsetCreatives=[];
+  S.adsetCreatives=Array.from({length:ns},()=>null);
   S.adCreatives=Array.from({length:na},()=>null);
   S.adCopies=Array.from({length:na},()=>({primaryText:'',headline:''}));
   S.creativeMode='single';S.adMediaMode='single';S.adCopyMode='single';
@@ -3917,7 +3943,7 @@ async function openSubAdsetWizard(cid,adCount=1){
     pubRunning:false,pubFinished:false,pubLog:[],pubErrors:[],
     createdAdsetId:null
   };
-  toast('Configurações da campanha "'+c.name+'" carregadas · '+na+' anúncio'+(na>1?'s':'')+' no conjunto','success',2500);
+  toast('Configurações da campanha "'+c.name+'" carregadas · '+ns+' conjunto'+(ns>1?'s':'')+' × '+na+' anúncio'+(na>1?'s':''),'success',2500);
   R();
 }
 
@@ -3942,7 +3968,7 @@ function closeSubAdsetWizard(){
 
 function setSubWizardStep(n){
   if(!S.campaignEditor.subWizard)return;
-  S.campaignEditor.subWizard.step=Math.max(0,Math.min(2,n));
+  S.campaignEditor.subWizard.step=Math.max(0,Math.min(getSubWizardSteps().length-1,n));
   R();
 }
 
@@ -3956,132 +3982,27 @@ async function publishSubAdset(){
   const w=S.campaignEditor.subWizard;if(!w)return;
   const cid=w.campaignId;
   w.pubRunning=true;w.pubFinished=false;w.pubLog=[];w.pubErrors=[];R();
-  const da=S.da,ds=S.ds,cc=S.cc,na=S.na;
+  stopPub=false;
   try{
-    // Validar página
-    subWizardLog(`ℹ️ Validando Page ID: ${da.pageId}...`,'loading');
-    try{
-      const pc=await fbApi(`/${da.pageId}`,{fields:'id,name',access_token:S.token});
-      subWizardLog(`  ✓ Página: ${pc.name}`,'success');
-    }catch(e){
-      subWizardLog(`✗ Page ID inválido: ${e.message}`,'error');
-      w.pubErrors.push('Page ID inválido: '+e.message);
-      w.pubRunning=false;w.pubFinished=true;R();return;
+    // Validação estrutural (páginas/URLs por conjunto, orçamento) — igual ao lançamento em massa
+    const errs=validatePubStructure();
+    if(errs.length){errs.forEach(e=>{subWizardLog('⚠️ '+e,'error');w.pubErrors.push(e);});w.pubRunning=false;w.pubFinished=true;R();return;}
+    // Valida cada Page ID efetivo
+    for(const pid of allEffectivePageIds()){
+      subWizardLog(`ℹ️ Validando Page ID: ${pid}...`,'loading');
+      try{const pc=await fbApi(`/${pid}`,{fields:'id,name',access_token:S.token});subWizardLog(`  ✓ Página: ${pc.name}`,'success');}
+      catch(e){subWizardLog(`✗ Page ID inválido (${pid}): ${e.message}`,'error');w.pubErrors.push('Page ID inválido: '+e.message);w.pubRunning=false;w.pubFinished=true;R();return;}
     }
-
-    // FASE 1 — criar adset
-    subWizardLog(`━━ FASE 1/3 — criando conjunto`,'loading');
-    const tg={
-      age_min:Math.max(18,ds.ageMin),age_max:Math.min(65,ds.ageMax),
-      geo_locations:{countries:ds.countries.split(',').map(s=>s.trim()).filter(Boolean)||['US']},
-      ...(ds.genders==='female'?{genders:[2]}:ds.genders==='male'?{genders:[1]}:{}),
-      ...(ds.detailedTargeting?{flexible_spec:[{interests:ds.detailedTargeting.split(',').map(s=>({name:s.trim()}))}]}:{}),
-      targeting_automation:{advantage_audience:ds.advantageAudience?1:0}
-    };
-    const og=OBJ_OPTIM[cc.objective],dt=OBJ_DEST[cc.objective];
-    const bidStrategy=cc.bidStrategy||'LOWEST_COST_WITHOUT_CAP';
-    const asetName=(S.adsetNames[0]||`${todayPrefix()} — 01`).slice(0,255);
-    const asetBody={
-      _method:'POST',access_token:S.token,
-      name:asetName,campaign_id:cid,
-      billing_event:OBJ_BILLING[cc.objective],
-      optimization_goal:og,bid_strategy:bidStrategy,
-      status:cc.status,
-      targeting:JSON.stringify(tg),
-      ...(dt!=='UNDEFINED'?{destination_type:dt}:{}),
-      ...(og==='OFFSITE_CONVERSIONS'?{attribution_spec:JSON.stringify([{event_type:'CLICK_THROUGH',window_days:7}])}:{})
-    };
-    const effBidAmt=ds.bidAmount||cc.bidAmount;
-    if((bidStrategy==='LOWEST_COST_WITH_BID_CAP'||bidStrategy==='COST_CAP')&&effBidAmt)asetBody.bid_amount=Math.round(parseFloat(effBidAmt)*100);
-    if(bidStrategy==='LOWEST_COST_WITH_MIN_ROAS'&&effBidAmt)asetBody.bid_amount=Math.round(parseFloat(effBidAmt)*1000);
-    if(!cc.cbo&&ds.budget)asetBody[ds.budgetType]=Math.max(100,Math.round(parseFloat(ds.budget)*100));
-    if(ds.startTime)asetBody.start_time=ds.startTime+':00';
-    if(ds.endTime)asetBody.end_time=ds.endTime+':00';
-    if(og==='OFFSITE_CONVERSIONS'&&ds.pixelId)asetBody.promoted_object=JSON.stringify({pixel_id:ds.pixelId,custom_event_type:ds.customEventType||'PURCHASE'});
-
-    const asetRes=await fbApi(`/${S.selectedAccount.id}/adsets`,asetBody);
-    const adsetId=asetRes.id;
-    if(!adsetId)throw new Error('Falha ao criar conjunto: sem ID retornado');
-    w.createdAdsetId=adsetId;
-    subWizardLog(`  ✓ Conjunto criado: ${adsetId}`,'success');
-
-    // FASE 2 — criar N criativos
-    subWizardLog(`━━ FASE 2/3 — criando ${na} criativo${na>1?'s':''}`,'loading');
-    const isFbUrl=u=>!u||u.includes('lookaside.facebook')||u.includes('fbcdn.net')||u.includes('scontent');
-
-    // Pre-fetch thumbnails de vídeos
-    const allVideoIds=[...new Set([da.videoId,...(S.adCreatives||[]).map(c=>c?.videoId)].filter(Boolean))];
-    const videoThumbs={};
-    for(const vid of allVideoIds){
-      try{const r=await fbApi(`/${vid}`,{fields:'picture',access_token:S.token});if(r.picture)videoThumbs[vid]=r.picture;}catch{}
-    }
-
-    const perAdMedia=S.adMediaMode==='per_ad'&&na>1;
-    const perAdCopy=S.adCopyMode==='per_ad'&&na>1;
-    const creativeIds=[];
-
-    for(let a=0;a<na;a++){
-      const adCr=perAdMedia?S.adCreatives[a]:null;
-      const effHash=adCr?.imageHash||da.imageHash;
-      const effImgUrl=adCr?.imageUrl||da.imageUrl;
-      const effVideoId=adCr?.videoId||da.videoId;
-      const effVideoThumb=adCr?.videoThumb||da.videoThumb||videoThumbs[effVideoId]||'';
-      const adCp=perAdCopy?S.adCopies[a]:null;
-      const effMsg=(adCp?.primaryText?.trim())||(da.primaryTexts[0]||'').trim();
-      const effHl=(adCp?.headline?.trim())||(da.headlines[0]||'').trim();
-      const effCta=da.cta;
-      const effLinkUrl=da.linkUrl;
-      const effUrlParams=da.urlParams&&da.urlParams.trim()?da.urlParams.trim():'';
-
-      let spec;
-      if(effVideoId){
-        const vd={video_id:effVideoId,call_to_action:{type:effCta,value:{link:effLinkUrl}}};
-        if(effMsg)vd.message=effMsg;if(effHl)vd.title=effHl;
-        if(effVideoThumb)vd.image_url=effVideoThumb;
-        spec={page_id:da.pageId,video_data:vd};
-      } else {
-        const ld={link:effLinkUrl};
-        if(effMsg)ld.message=effMsg;if(effHl)ld.name=effHl;
-        ld.call_to_action={type:effCta,value:{link:effLinkUrl}};
-        if(effHash)ld.image_hash=effHash;
-        else if(effImgUrl&&!isFbUrl(effImgUrl))ld.picture=effImgUrl;
-        spec={page_id:da.pageId,link_data:ld};
-      }
-      const body={_method:'POST',access_token:S.token,name:`Creative_${a+1}`.slice(0,255),object_story_spec:JSON.stringify(spec)};
-      if(effUrlParams)body.url_tags=effUrlParams;
-      try{
-        const cr=await fbApi(`/${S.selectedAccount.id}/adcreatives`,body);
-        creativeIds.push(cr.id);
-        subWizardLog(`  ✓ Criativo ${a+1}: ${cr.id}`,'success');
-      }catch(e){
-        creativeIds.push(null);
-        w.pubErrors.push(`Criativo ${a+1}: ${e.message}`);
-        subWizardLog(`  ✗ Criativo ${a+1}: ${e.message}`,'error');
-      }
-      await sleep(150);
-    }
-
-    // FASE 3 — criar N anúncios
-    subWizardLog(`━━ FASE 3/3 — criando ${na} anúncio${na>1?'s':''}`,'loading');
-    let okCount=0;
-    for(let a=0;a<na;a++){
-      const crid=creativeIds[a];
-      if(!crid){continue;}
-      const adBody={_method:'POST',access_token:S.token,name:`${da.name||'Ad'} — A${a+1}`.slice(0,255),adset_id:adsetId,creative:JSON.stringify({creative_id:crid}),status:cc.status};
-      try{
-        await fbApi(`/${S.selectedAccount.id}/ads`,adBody);
-        okCount++;
-        subWizardLog(`  ✓ Anúncio ${a+1} criado`,'success');
-      }catch(e){
-        w.pubErrors.push(`Anúncio ${a+1}: ${e.message}`);
-        subWizardLog(`  ✗ Anúncio ${a+1}: ${e.message}`,'error');
-      }
-      await sleep(150);
-    }
-
-    subWizardLog(`🎉 Concluído! ${okCount}/${na} anúncios criados.`,okCount===na?'success':'loading');
+    // Conjuntos + criativos + anúncios na campanha existente (fases 1-3 aqui)
+    const res=await publishAdsetsAndAds([cid],{log:subWizardLog,phaseLabel:n=>`FASE ${n-1}/3`});
+    w.createdAdsetIds=res.adsetIds.filter(Boolean);
+    w.createdAdsetId=w.createdAdsetIds[0]||null;
+    w.adsetsOk=res.adsetsOk;w.adsetsTotal=res.adsetsTotal;w.adsOk=res.adsOk;w.adsTotal=res.adsTotal;
+    if(res.adsetsOk<res.adsetsTotal)w.pubErrors.push(`${res.adsetsTotal-res.adsetsOk} conjunto(s) não criado(s) — veja o log.`);
+    if(res.adsOk<res.adsTotal)w.pubErrors.push(`${res.adsTotal-res.adsOk} anúncio(s) não criado(s) — veja o log.`);
+    subWizardLog(`🎉 Concluído! Conjuntos:${res.adsetsOk}/${res.adsetsTotal} | Anúncios:${res.adsOk}/${res.adsTotal}`,res.adsetsOk===res.adsetsTotal&&res.adsOk===res.adsTotal?'success':'loading');
   } catch(e){
-    subWizardLog(`✗ ${e.message}`,'error');
+    if(e.message==='stop')subWizardLog('⏹ Interrompido','error');else subWizardLog(`✗ ${e.message}`,'error');
     w.pubErrors.push(e.message);
   }
   w.pubRunning=false;w.pubFinished=true;R();
@@ -4089,13 +4010,11 @@ async function publishSubAdset(){
 
 function nextSubWizardStep(){
   if(!S.campaignEditor.subWizard)return;
-  const cur=S.campaignEditor.subWizard.step;
-  // Valida steps reusando validateStepType
-  if(cur===0){
-    const errs=validateStepType({type:'conjunto',adsetIdx:-1});
-    if(errs.length){errs.forEach(e=>toast(e,'warning'));return;}
-  } else if(cur===1){
-    const errs=validateStepType({type:'anuncio',adsetIdx:-1});
+  const cur=S.campaignEditor.subWizard.step||0;
+  // Valida o step atual reusando validateStepType (conjunto / anúncio global / anúncio por conjunto)
+  const info=getSubWizardStepInfo(cur);
+  if(info.type!=='publicar'){
+    const errs=validateStepType(info);
     if(errs.length){errs.forEach(e=>toast(e,'warning'));return;}
   }
   setSubWizardStep(cur+1);
@@ -4156,36 +4075,200 @@ function plog(m,t='info'){
   const bar=document.getElementById('pub-bar');if(bar)bar.style.width=(S.pubTotal>0?Math.round(S.pubDone/S.pubTotal*100):0)+'%';
 }
 
-async function startPub(){
+// ── Validação e publicação compartilhadas (lançamento em massa + novo conjunto em campanha existente) ──
+function validatePubStructure(){
   const errs=[];
   const usingPerAdset=S.editAdsPerAdset&&S.ns>1;
-
-  // Helper: retorna a página efetiva para um conjunto específico
   const effPageForAdset=(si,ci)=>{
     if(usingPerAdset&&S.adsetAds[si]?.pageId)return S.adsetAds[si].pageId;
     if(S.pageMode==='per_campaign'&&S.nc>1&&S.campaignPages[ci])return S.campaignPages[ci];
     return S.da.pageId;
   };
-  // Helper: retorna a URL efetiva para um conjunto
   const effUrlForAdset=(si)=>{
     if(usingPerAdset&&S.adsetAds[si]?.linkUrl)return S.adsetAds[si].linkUrl;
     return S.da.linkUrl;
   };
-
-  // Valida cada combinação campanha × conjunto
   let pageErrCount=0,urlErrCount=0;
   for(let ci=0;ci<S.nc;ci++){
     for(let si=0;si<S.ns;si++){
       const p=effPageForAdset(si,ci);
-      if(!p){pageErrCount++;if(pageErrCount<=3)errs.push(`Conj. ${si+1} da Camp. ${ci+1}: sem página definida.`);}
+      if(!p){pageErrCount++;if(pageErrCount<=3)errs.push(`Conj. ${si+1}${S.nc>1?' da Camp. '+(ci+1):''}: sem página definida.`);}
       const u=effUrlForAdset(si);
-      if(!u||!u.startsWith('http')){urlErrCount++;if(urlErrCount<=3)errs.push(`Conj. ${si+1} da Camp. ${ci+1}: URL de destino inválida.`);}
+      if(!u||!u.startsWith('http')){urlErrCount++;if(urlErrCount<=3)errs.push(`Conj. ${si+1}${S.nc>1?' da Camp. '+(ci+1):''}: URL de destino inválida.`);}
     }
   }
   if(pageErrCount>3)errs.push(`...e mais ${pageErrCount-3} conjunto(s) sem página.`);
   if(urlErrCount>3)errs.push(`...e mais ${urlErrCount-3} conjunto(s) com URL inválida.`);
-
   if(!S.cc.cbo&&(!S.ds.budget||parseFloat(S.ds.budget)<1))errs.push('Orçamento mínimo: $1/dia.');
+  return errs;
+}
+// Todos os Page IDs efetivos usados (global, por campanha, por conjunto)
+function allEffectivePageIds(){
+  return [...new Set([S.da.pageId,...(S.campaignPages||[]),...Object.values(S.adsetAds||{}).map(c=>c?.pageId)].filter(Boolean))];
+}
+// Cria conjuntos + criativos + anúncios para as campanhas `cids` (IDs já existentes).
+// Usa exatamente a mesma hierarquia de mídia/copy/página do lançamento em massa.
+async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FASE ${n}/4`}={}){
+  const plog=log;
+  const {ns,na}=S,cc=S.cc,ds=S.ds,da=S.da,mode=S.creativeMode||'single';
+  plog(`━━ ${phaseLabel(2)} — ${cids.filter(Boolean).length*ns} conjuntos`,'loading');
+  const ar=[],am=[];
+  cids.forEach((cid,ci)=>{
+    if(!cid)return;
+    for(let si=0;si<ns;si++){
+      const tg={age_min:Math.max(18,ds.ageMin),age_max:Math.min(65,ds.ageMax),geo_locations:{countries:ds.countries.split(',').map(s=>s.trim()).filter(Boolean)||['US']},...(ds.genders==='female'?{genders:[2]}:ds.genders==='male'?{genders:[1]}:{}),...(ds.detailedTargeting?{flexible_spec:[{interests:ds.detailedTargeting.split(',').map(s=>({name:s.trim()}))}]}:{}),targeting_automation:{advantage_audience:ds.advantageAudience?1:0}};
+      const og=OBJ_OPTIM[cc.objective],dt=OBJ_DEST[cc.objective];
+      const bidStrategy=cc.bidStrategy||'LOWEST_COST_WITHOUT_CAP';
+      const b={name:(S.adsetNames[si]||`${todayPrefix()} — ${String(si+1).padStart(2,'0')}`).slice(0,255),campaign_id:cid,billing_event:OBJ_BILLING[cc.objective],optimization_goal:og,bid_strategy:bidStrategy,status:cc.status,targeting:tg,...(dt!=='UNDEFINED'?{destination_type:dt}:{}),...(og==='OFFSITE_CONVERSIONS'?{attribution_spec:JSON.stringify([{event_type:'CLICK_THROUGH',window_days:7}])}:{})};
+      // Bid amount: prefer adset-level (ds.bidAmount), fallback to campaign-level (cc.bidAmount)
+      const effBidAmount=ds.bidAmount||cc.bidAmount;
+      if((bidStrategy==='LOWEST_COST_WITH_BID_CAP'||bidStrategy==='COST_CAP')&&effBidAmount){
+        b.bid_amount=Math.round(parseFloat(effBidAmount)*100);
+      }
+      if(bidStrategy==='LOWEST_COST_WITH_MIN_ROAS'&&effBidAmount){
+        b.bid_amount=Math.round(parseFloat(effBidAmount)*1000);
+      }
+      if(!cc.cbo&&ds.budget)b[ds.budgetType]=Math.max(100,Math.round(parseFloat(ds.budget)*100));
+      if(ds.startTime)b.start_time=ds.startTime+':00';
+      if(ds.endTime)b.end_time=ds.endTime+':00';
+      if(og==='OFFSITE_CONVERSIONS'&&ds.pixelId)b.promoted_object=JSON.stringify({pixel_id:ds.pixelId,custom_event_type:ds.customEventType||'PURCHASE'});
+      ar.push({method:'POST',relative_url:`${S.selectedAccount.id}/adsets`,body:encodeBody(b)});am.push({ci,si});
+    }
+  });
+  const ab=await batchApi(ar,S.token);bump(Math.ceil(ar.length/50));
+  const aids=ab.map((r,i)=>{const p=parseBatch(r);if(p.error){plog(`  ✗ Set C${am[i].ci+1}S${am[i].si+1}: ${p.error.message}`,'error');return null;}return p.id;});
+  plog(`  ${aids.filter(Boolean).length}/${ar.length} conjuntos criados`,'info');
+  if(stopPub)throw new Error('stop');
+
+  plog(`━━ ${phaseLabel(3)} — criativos`,'loading');
+  const isFbUrl=u=>!u||u.includes('lookaside.facebook')||u.includes('fbcdn.net')||u.includes('scontent');
+
+  const buildLinkData=(cleanUrl,msg,hl,imgHash,imgUrl,ctaOverride)=>{
+    const ld={link:cleanUrl};
+    if(msg)ld.message=msg;if(hl)ld.name=hl;
+    ld.call_to_action={type:ctaOverride||da.cta,value:{link:cleanUrl}};
+    if(imgHash)ld.image_hash=imgHash;
+    else if(imgUrl&&!isFbUrl(imgUrl))ld.picture=imgUrl;
+    return ld;
+  };
+
+  // Pre-fetch video thumbnails for all unique video IDs used
+  const adsetAdsVids=[];
+  Object.values(S.adsetAds||{}).forEach(c=>{
+    if(c?.videoId)adsetAdsVids.push(c.videoId);
+    (c?.adCreatives||[]).forEach(a=>{if(a?.videoId)adsetAdsVids.push(a.videoId);});
+    (c?.ads||[]).forEach(a=>{if(a?.videoId)adsetAdsVids.push(a.videoId);});
+  });
+  const allVideoIds=[...new Set([da.videoId,...(S.campaignCreatives||[]).map(c=>c?.videoId),...(S.adsetCreatives||[]).map(c=>c?.videoId),...(S.adCreatives||[]).map(c=>c?.videoId),...Object.values(S.campAdsetCreatives||{}).map(c=>c?.videoId),...adsetAdsVids].filter(Boolean))];
+  const videoThumbs={};
+  if(allVideoIds.length){
+    plog(`  📷 Buscando thumbnails de ${allVideoIds.length} vídeo(s)...`,'loading');
+    const thumbReqs=allVideoIds.map(vid=>({method:'GET',relative_url:`${vid}?fields=picture`}));
+    const thumbBatch=await batchApi(thumbReqs,S.token);
+    thumbBatch.forEach((r,i)=>{const p=parseBatch(r);if(!p.error&&p.picture)videoThumbs[allVideoIds[i]]=p.picture;});
+  }
+
+  const editPerAdset=S.editAdsPerAdset&&S.ns>1; // wizards separados por conjunto
+  const perAdMedia=S.adMediaMode==='per_ad'&&na>1;
+  const perAdCopy=S.adCopyMode==='per_ad'&&na>1;
+  const matrixPerAd=mode==='per_campaign_adset'&&na>1; // matriz com granularidade por anúncio
+  const crq=[],crm=[];
+  aids.forEach((id,i)=>{
+    if(!id)return;
+    const {ci,si}=am[i],cleanUrl=da.linkUrl;
+    const adCount=(perAdMedia||perAdCopy||matrixPerAd||editPerAdset)?na:1;
+
+    for(let a=0;a<adCount;a++){
+      // Modo editPerAdset: state completo em S.adsetAds[si]
+      const adsetConf=editPerAdset?S.adsetAds[si]:null;
+      const asAdCr=adsetConf?.adCreatives?.[a]; // mídia por anúncio (dentro do conjunto)
+      const asAdCp=adsetConf?.adCopies?.[a];    // copy por anúncio (dentro do conjunto)
+      // Resolve matrix cell per ad when applicable
+      const matrixCr=mode==='per_campaign_adset'
+        ? (matrixPerAd ? S.campAdsetCreatives[`${ci}_${si}_${a}`] : S.campAdsetCreatives[`${ci}_${si}`])
+        : null;
+      const campCr=mode==='per_campaign'?S.campaignCreatives[ci]:mode==='per_adset'?S.adsetCreatives[si]:matrixCr;
+
+      // Effective values — hierarquia: ad-level override > adset-level override > campaign/mode override > global
+      const effPageId=(adsetConf?.pageId)||(S.pageMode==='per_campaign'&&S.campaignPages[ci])||da.pageId;
+      const effLinkUrl=adsetConf?.linkUrl||da.linkUrl;
+      const effCta=adsetConf?.cta||da.cta;
+      const effUrlParams=(adsetConf?.urlParams&&adsetConf.urlParams.trim())?adsetConf.urlParams.trim():(da.urlParams&&da.urlParams.trim()?da.urlParams.trim():'');
+      const effName=adsetConf?.name||da.name;
+
+      // Media hierarchy: per-ad of conjunto > mídia padrão do conjunto > per-ad global > campaign/adset > global
+      const adCr=perAdMedia?S.adCreatives[a]:null;
+      const effHash=asAdCr?.imageHash||adsetConf?.imageHash||adCr?.imageHash||campCr?.imageHash||da.imageHash;
+      const effImgUrl=asAdCr?.imageUrl||adsetConf?.imageUrl||adCr?.imageUrl||campCr?.imageUrl||da.imageUrl;
+      const effVideoId=asAdCr?.videoId||adsetConf?.videoId||adCr?.videoId||campCr?.videoId||da.videoId;
+      const effVideoThumb=asAdCr?.videoThumb||adsetConf?.videoThumb||adCr?.videoThumb||campCr?.videoThumb||da.videoThumb||videoThumbs[effVideoId]||'';
+      // Copy hierarchy
+      const adCp=perAdCopy?S.adCopies[a]:null;
+      const effMsg=(asAdCp?.primaryText?.trim())||(adsetConf?.primaryTexts?.[0]?.trim())||(adCp?.primaryText?.trim())||(campCr?.primaryText?.trim())||(da.primaryTexts[0]||'').trim();
+      const effHl=(asAdCp?.headline?.trim())||(adsetConf?.headlines?.[0]?.trim())||(adCp?.headline?.trim())||(campCr?.headline?.trim())||(da.headlines[0]||'').trim();
+
+      let spec;
+      if(effVideoId){
+        const vd={video_id:effVideoId,call_to_action:{type:effCta,value:{link:effLinkUrl}}};
+        if(effMsg)vd.message=effMsg;if(effHl)vd.title=effHl;
+        if(effVideoThumb)vd.image_url=effVideoThumb;
+        spec={page_id:effPageId,video_data:vd};
+      }else{
+        spec={page_id:effPageId,link_data:buildLinkData(effLinkUrl,effMsg,effHl,effHash,effImgUrl,effCta)};
+      }
+
+      if(crq.length===0)plog(`  📋 Spec[0]: ${JSON.stringify(spec).slice(0,200)}…`,'info');
+      const creativeBody={name:`Creative_C${ci+1}S${si+1}${adCount>1?'A'+(a+1):''}`.slice(0,255),object_story_spec:spec};
+      if(effUrlParams)creativeBody.url_tags=effUrlParams;
+      crq.push({method:'POST',relative_url:`${S.selectedAccount.id}/adcreatives`,body:encodeBody(creativeBody)});
+      crm.push({ai:i,ci,si,adIdx:a});
+    }
+  });
+
+  const crb=await batchApi(crq,S.token);bump(Math.ceil(crq.length/50));
+  // Map: crid[adsetIndex] = single creative ID or crid_multi[adsetIndex] = [creative IDs per ad]
+  const crid={},crid_multi={};
+  crb.forEach((r,idx)=>{
+    const p=parseBatch(r);
+    const {ai,ci,si,adIdx}=crm[idx];
+    if(!p.error){
+      if(perAdMedia||perAdCopy||matrixPerAd||editPerAdset){
+        if(!crid_multi[ai])crid_multi[ai]=[];
+        crid_multi[ai][adIdx]=p.id;
+      }else{
+        crid[ai]=p.id;
+      }
+    }else{plog(`  ✗ Creative C${ci+1}S${si+1}${(perAdMedia||perAdCopy||matrixPerAd||editPerAdset)?'A'+(adIdx+1):''}: ${p.error.message}`,'error');}
+  });
+  plog(`  ${Object.keys(crid).length+Object.keys(crid_multi).length} adsets com criativos criados`,'info');
+  if(stopPub)throw new Error('stop');
+
+  plog(`━━ ${phaseLabel(4)} — anúncios`,'loading');
+  const aq=[];
+  if(perAdMedia||perAdCopy||matrixPerAd||editPerAdset){
+    // Each ad gets its own creative
+    Object.entries(crid_multi).forEach(([ai,crIds])=>{
+      const adid=aids[+ai],{ci,si}=am[+ai];
+      crIds.forEach((cid_,a)=>{
+        if(!cid_)return;
+        aq.push({method:'POST',relative_url:`${S.selectedAccount.id}/ads`,body:encodeBody({name:`${da.name||'Ad'} — C${ci+1}S${si+1}A${a+1}`.slice(0,255),adset_id:adid,creative:{creative_id:cid_},status:cc.status})});
+      });
+    });
+  }else{
+    // All ads in adset share same creative
+    Object.entries(crid).forEach(([ai,cid_])=>{
+      const adid=aids[+ai],{ci,si}=am[+ai];
+      for(let a=0;a<na;a++)aq.push({method:'POST',relative_url:`${S.selectedAccount.id}/ads`,body:encodeBody({name:`${da.name||'Ad'} — C${ci+1}S${si+1}A${a+1}`.slice(0,255),adset_id:adid,creative:{creative_id:cid_},status:cc.status})});
+    });
+  }
+  const aab=await batchApi(aq,S.token);bump(Math.ceil(aq.length/50));
+  const ok=aab.filter(r=>!parseBatch(r).error).length;
+  plog(`  ${ok}/${aq.length} anúncios criados`,'info');
+  return {adsetIds:aids,adsetsOk:aids.filter(Boolean).length,adsetsTotal:ar.length,adsOk:ok,adsTotal:aq.length};
+}
+
+async function startPub(){
+  const errs=validatePubStructure();
   if(errs.length){S.pubErrors=errs.map(e=>({campName:'Validação',error:e}));S.pubFinished=true;S.pubLog=errs.map(e=>({m:`⚠️ ${e}`,t:'error'}));R();return;}
 
   stopPub=false;S.pubLog=[];S.pubErrors=[];
@@ -4195,7 +4278,7 @@ async function startPub(){
   let bd=0;const bump=n=>{bd+=n;S.pubDone=bd;plog('');};
 
   // Validate all unique page IDs
-  const allPageIds=[...new Set([da.pageId,...(S.campaignPages||[])].filter(Boolean))];
+  const allPageIds=allEffectivePageIds();
   for(const pid of allPageIds){
     plog(`ℹ️ Validando Page ID: ${pid}...`,'loading');
     try{
@@ -4224,160 +4307,8 @@ async function startPub(){
     plog(`  ${cids.filter(Boolean).length}/${nc} campanhas criadas`,'info');
     if(stopPub)throw new Error('stop');
 
-    plog(`━━ FASE 2/4 — ${cids.filter(Boolean).length*ns} conjuntos`,'loading');
-    const ar=[],am=[];
-    cids.forEach((cid,ci)=>{
-      if(!cid)return;
-      for(let si=0;si<ns;si++){
-        const tg={age_min:Math.max(18,ds.ageMin),age_max:Math.min(65,ds.ageMax),geo_locations:{countries:ds.countries.split(',').map(s=>s.trim()).filter(Boolean)||['US']},...(ds.genders==='female'?{genders:[2]}:ds.genders==='male'?{genders:[1]}:{}),...(ds.detailedTargeting?{flexible_spec:[{interests:ds.detailedTargeting.split(',').map(s=>({name:s.trim()}))}]}:{}),targeting_automation:{advantage_audience:ds.advantageAudience?1:0}};
-        const og=OBJ_OPTIM[cc.objective],dt=OBJ_DEST[cc.objective];
-        const bidStrategy=cc.bidStrategy||'LOWEST_COST_WITHOUT_CAP';
-        const b={name:(S.adsetNames[si]||`${todayPrefix()} — ${String(si+1).padStart(2,'0')}`).slice(0,255),campaign_id:cid,billing_event:OBJ_BILLING[cc.objective],optimization_goal:og,bid_strategy:bidStrategy,status:cc.status,targeting:tg,...(dt!=='UNDEFINED'?{destination_type:dt}:{}),...(og==='OFFSITE_CONVERSIONS'?{attribution_spec:JSON.stringify([{event_type:'CLICK_THROUGH',window_days:7}])}:{})};
-        // Bid amount: prefer adset-level (ds.bidAmount), fallback to campaign-level (cc.bidAmount)
-        const effBidAmount=ds.bidAmount||cc.bidAmount;
-        if((bidStrategy==='LOWEST_COST_WITH_BID_CAP'||bidStrategy==='COST_CAP')&&effBidAmount){
-          b.bid_amount=Math.round(parseFloat(effBidAmount)*100);
-        }
-        if(bidStrategy==='LOWEST_COST_WITH_MIN_ROAS'&&effBidAmount){
-          b.bid_amount=Math.round(parseFloat(effBidAmount)*1000);
-        }
-        if(!cc.cbo&&ds.budget)b[ds.budgetType]=Math.max(100,Math.round(parseFloat(ds.budget)*100));
-        if(ds.startTime)b.start_time=ds.startTime+':00';
-        if(ds.endTime)b.end_time=ds.endTime+':00';
-        if(og==='OFFSITE_CONVERSIONS'&&ds.pixelId)b.promoted_object=JSON.stringify({pixel_id:ds.pixelId,custom_event_type:ds.customEventType||'PURCHASE'});
-        ar.push({method:'POST',relative_url:`${S.selectedAccount.id}/adsets`,body:encodeBody(b)});am.push({ci,si});
-      }
-    });
-    const ab=await batchApi(ar,S.token);bump(Math.ceil(ar.length/50));
-    const aids=ab.map((r,i)=>{const p=parseBatch(r);if(p.error){plog(`  ✗ Set C${am[i].ci+1}S${am[i].si+1}: ${p.error.message}`,'error');return null;}return p.id;});
-    plog(`  ${aids.filter(Boolean).length}/${ar.length} conjuntos criados`,'info');
-    if(stopPub)throw new Error('stop');
-
-    plog('━━ FASE 3/4 — criativos','loading');
-    const isFbUrl=u=>!u||u.includes('lookaside.facebook')||u.includes('fbcdn.net')||u.includes('scontent');
-
-    const buildLinkData=(cleanUrl,msg,hl,imgHash,imgUrl,ctaOverride)=>{
-      const ld={link:cleanUrl};
-      if(msg)ld.message=msg;if(hl)ld.name=hl;
-      ld.call_to_action={type:ctaOverride||da.cta,value:{link:cleanUrl}};
-      if(imgHash)ld.image_hash=imgHash;
-      else if(imgUrl&&!isFbUrl(imgUrl))ld.picture=imgUrl;
-      return ld;
-    };
-
-    // Pre-fetch video thumbnails for all unique video IDs used
-    const adsetAdsVids=[];
-    Object.values(S.adsetAds||{}).forEach(c=>{
-      if(c?.videoId)adsetAdsVids.push(c.videoId);
-      (c?.adCreatives||[]).forEach(a=>{if(a?.videoId)adsetAdsVids.push(a.videoId);});
-      (c?.ads||[]).forEach(a=>{if(a?.videoId)adsetAdsVids.push(a.videoId);});
-    });
-    const allVideoIds=[...new Set([da.videoId,...(S.campaignCreatives||[]).map(c=>c?.videoId),...(S.adsetCreatives||[]).map(c=>c?.videoId),...(S.adCreatives||[]).map(c=>c?.videoId),...Object.values(S.campAdsetCreatives||{}).map(c=>c?.videoId),...adsetAdsVids].filter(Boolean))];
-    const videoThumbs={};
-    if(allVideoIds.length){
-      plog(`  📷 Buscando thumbnails de ${allVideoIds.length} vídeo(s)...`,'loading');
-      const thumbReqs=allVideoIds.map(vid=>({method:'GET',relative_url:`${vid}?fields=picture`}));
-      const thumbBatch=await batchApi(thumbReqs,S.token);
-      thumbBatch.forEach((r,i)=>{const p=parseBatch(r);if(!p.error&&p.picture)videoThumbs[allVideoIds[i]]=p.picture;});
-    }
-
-    const editPerAdset=S.editAdsPerAdset&&S.ns>1; // wizards separados por conjunto
-    const perAdMedia=S.adMediaMode==='per_ad'&&na>1;
-    const perAdCopy=S.adCopyMode==='per_ad'&&na>1;
-    const matrixPerAd=mode==='per_campaign_adset'&&na>1; // matriz com granularidade por anúncio
-    const crq=[],crm=[];
-    aids.forEach((id,i)=>{
-      if(!id)return;
-      const {ci,si}=am[i],cleanUrl=da.linkUrl;
-      const adCount=(perAdMedia||perAdCopy||matrixPerAd||editPerAdset)?na:1;
-
-      for(let a=0;a<adCount;a++){
-        // Modo editPerAdset: state completo em S.adsetAds[si]
-        const adsetConf=editPerAdset?S.adsetAds[si]:null;
-        const asAdCr=adsetConf?.adCreatives?.[a]; // mídia por anúncio (dentro do conjunto)
-        const asAdCp=adsetConf?.adCopies?.[a];    // copy por anúncio (dentro do conjunto)
-        // Resolve matrix cell per ad when applicable
-        const matrixCr=mode==='per_campaign_adset'
-          ? (matrixPerAd ? S.campAdsetCreatives[`${ci}_${si}_${a}`] : S.campAdsetCreatives[`${ci}_${si}`])
-          : null;
-        const campCr=mode==='per_campaign'?S.campaignCreatives[ci]:mode==='per_adset'?S.adsetCreatives[si]:matrixCr;
-
-        // Effective values — hierarquia: ad-level override > adset-level override > campaign/mode override > global
-        const effPageId=(adsetConf?.pageId)||(S.pageMode==='per_campaign'&&S.campaignPages[ci])||da.pageId;
-        const effLinkUrl=adsetConf?.linkUrl||da.linkUrl;
-        const effCta=adsetConf?.cta||da.cta;
-        const effUrlParams=(adsetConf?.urlParams&&adsetConf.urlParams.trim())?adsetConf.urlParams.trim():(da.urlParams&&da.urlParams.trim()?da.urlParams.trim():'');
-        const effName=adsetConf?.name||da.name;
-
-        // Media hierarchy: per-ad of conjunto > mídia padrão do conjunto > per-ad global > campaign/adset > global
-        const adCr=perAdMedia?S.adCreatives[a]:null;
-        const effHash=asAdCr?.imageHash||adsetConf?.imageHash||adCr?.imageHash||campCr?.imageHash||da.imageHash;
-        const effImgUrl=asAdCr?.imageUrl||adsetConf?.imageUrl||adCr?.imageUrl||campCr?.imageUrl||da.imageUrl;
-        const effVideoId=asAdCr?.videoId||adsetConf?.videoId||adCr?.videoId||campCr?.videoId||da.videoId;
-        const effVideoThumb=asAdCr?.videoThumb||adsetConf?.videoThumb||adCr?.videoThumb||campCr?.videoThumb||da.videoThumb||videoThumbs[effVideoId]||'';
-        // Copy hierarchy
-        const adCp=perAdCopy?S.adCopies[a]:null;
-        const effMsg=(asAdCp?.primaryText?.trim())||(adsetConf?.primaryTexts?.[0]?.trim())||(adCp?.primaryText?.trim())||(campCr?.primaryText?.trim())||(da.primaryTexts[0]||'').trim();
-        const effHl=(asAdCp?.headline?.trim())||(adsetConf?.headlines?.[0]?.trim())||(adCp?.headline?.trim())||(campCr?.headline?.trim())||(da.headlines[0]||'').trim();
-
-        let spec;
-        if(effVideoId){
-          const vd={video_id:effVideoId,call_to_action:{type:effCta,value:{link:effLinkUrl}}};
-          if(effMsg)vd.message=effMsg;if(effHl)vd.title=effHl;
-          if(effVideoThumb)vd.image_url=effVideoThumb;
-          spec={page_id:effPageId,video_data:vd};
-        }else{
-          spec={page_id:effPageId,link_data:buildLinkData(effLinkUrl,effMsg,effHl,effHash,effImgUrl,effCta)};
-        }
-
-        if(crq.length===0)plog(`  📋 Spec[0]: ${JSON.stringify(spec).slice(0,200)}…`,'info');
-        const creativeBody={name:`Creative_C${ci+1}S${si+1}${adCount>1?'A'+(a+1):''}`.slice(0,255),object_story_spec:spec};
-        if(effUrlParams)creativeBody.url_tags=effUrlParams;
-        crq.push({method:'POST',relative_url:`${S.selectedAccount.id}/adcreatives`,body:encodeBody(creativeBody)});
-        crm.push({ai:i,ci,si,adIdx:a});
-      }
-    });
-
-    const crb=await batchApi(crq,S.token);bump(Math.ceil(crq.length/50));
-    // Map: crid[adsetIndex] = single creative ID or crid_multi[adsetIndex] = [creative IDs per ad]
-    const crid={},crid_multi={};
-    crb.forEach((r,idx)=>{
-      const p=parseBatch(r);
-      const {ai,ci,si,adIdx}=crm[idx];
-      if(!p.error){
-        if(perAdMedia||perAdCopy||matrixPerAd||editPerAdset){
-          if(!crid_multi[ai])crid_multi[ai]=[];
-          crid_multi[ai][adIdx]=p.id;
-        }else{
-          crid[ai]=p.id;
-        }
-      }else{plog(`  ✗ Creative C${ci+1}S${si+1}${(perAdMedia||perAdCopy||matrixPerAd||editPerAdset)?'A'+(adIdx+1):''}: ${p.error.message}`,'error');}
-    });
-    plog(`  ${Object.keys(crid).length+Object.keys(crid_multi).length} adsets com criativos criados`,'info');
-    if(stopPub)throw new Error('stop');
-
-    plog('━━ FASE 4/4 — anúncios','loading');
-    const aq=[];
-    if(perAdMedia||perAdCopy||matrixPerAd||editPerAdset){
-      // Each ad gets its own creative
-      Object.entries(crid_multi).forEach(([ai,crIds])=>{
-        const adid=aids[+ai],{ci,si}=am[+ai];
-        crIds.forEach((cid_,a)=>{
-          if(!cid_)return;
-          aq.push({method:'POST',relative_url:`${S.selectedAccount.id}/ads`,body:encodeBody({name:`${da.name||'Ad'} — C${ci+1}S${si+1}A${a+1}`.slice(0,255),adset_id:adid,creative:{creative_id:cid_},status:cc.status})});
-        });
-      });
-    }else{
-      // All ads in adset share same creative
-      Object.entries(crid).forEach(([ai,cid_])=>{
-        const adid=aids[+ai],{ci,si}=am[+ai];
-        for(let a=0;a<na;a++)aq.push({method:'POST',relative_url:`${S.selectedAccount.id}/ads`,body:encodeBody({name:`${da.name||'Ad'} — C${ci+1}S${si+1}A${a+1}`.slice(0,255),adset_id:adid,creative:{creative_id:cid_},status:cc.status})});
-      });
-    }
-    const aab=await batchApi(aq,S.token);bump(Math.ceil(aq.length/50));
-    const ok=aab.filter(r=>!parseBatch(r).error).length;
-    plog(`  ${ok}/${aq.length} anúncios criados`,'info');
-    plog(`🎉 Concluído! Campanhas:${cids.filter(Boolean).length} | Conjuntos:${aids.filter(Boolean).length} | Anúncios:${ok}`,'success');
+    const res=await publishAdsetsAndAds(cids,{log:plog,bump});
+    plog(`🎉 Concluído! Campanhas:${cids.filter(Boolean).length} | Conjuntos:${res.adsetsOk} | Anúncios:${res.adsOk}`,'success');
   }catch(e){if(e.message==='stop')plog('⏹ Interrompido','error');else plog(`✗ ${e.message}`,'error');}
   S.pubRunning=false;S.pubFinished=true;R();
 }
