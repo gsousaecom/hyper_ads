@@ -138,17 +138,62 @@ const fbApi = async (path, params = {}, maxRetries = 3) => {
   }
 };
 
+// ── Medidor de uso da API (janela de rate limit da Meta) ───────────────────
+// Alimentado pelos headers x-business-use-case-usage / x-ad-account-usage / x-app-usage
+let _apiUsage={pct:0,at:0,regainMin:0};
+function apiUsagePct(){ return (Date.now()-_apiUsage.at>10*60000)?0:_apiUsage.pct; } // dado com mais de 10min não vale
+function _updateUsageFromHeaders(headers){
+  if(!Array.isArray(headers))return;
+  try{
+    let pct=0,regain=0;
+    for(const h of headers){
+      const n=(h.name||'').toLowerCase();
+      if(n==='x-business-use-case-usage'){
+        const d=JSON.parse(h.value);
+        Object.values(d).forEach(arr=>(Array.isArray(arr)?arr:[]).forEach(u=>{
+          pct=Math.max(pct,u.call_count||0,u.total_cputime||0,u.total_time||0);
+          regain=Math.max(regain,u.estimated_time_to_regain_access||0);
+        }));
+      }else if(n==='x-ad-account-usage'){
+        pct=Math.max(pct,JSON.parse(h.value).acc_id_util_pct||0);
+      }else if(n==='x-app-usage'){
+        const d=JSON.parse(h.value);
+        pct=Math.max(pct,d.call_count||0,d.total_cputime||0,d.total_time||0);
+      }
+    }
+    if(pct>0||regain>0){
+      _apiUsage={pct:Math.round(pct),at:Date.now(),regainMin:regain};
+      const el=document.getElementById('api-usage-badge');if(el)el.outerHTML=renderApiUsageBadge();
+    }
+  }catch{}
+}
+function renderApiUsageBadge(){
+  const pct=apiUsagePct();
+  const color=pct>=80?'#EF4444':pct>=50?'#F59E0B':'#22c55e';
+  return `<div id="api-usage-badge" style="display:${pct>0?'flex':'none'};align-items:center;gap:.375rem;padding:.375rem .25rem 0;" title="Uso da janela de rate limit da Meta API${_apiUsage.regainMin?' · libera em ~'+_apiUsage.regainMin+' min':''}">
+    <div style="flex:1;height:4px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;"><div style="width:${Math.min(100,pct)}%;height:100%;background:${color};border-radius:99px;transition:width .3s;"></div></div>
+    <span style="font-size:.55rem;font-weight:700;color:${color};white-space:nowrap;">API ${pct}%</span>
+  </div>`;
+}
+
 const batchApi = async (reqs, token, maxRetries=3) => {
   if (!reqs.length) return [];
   const chunks = [];
   for (let i = 0; i < reqs.length; i += 50) chunks.push(reqs.slice(i, i + 50));
   const results = [];
   for (let ci = 0; ci < chunks.length; ci++) {
+    // Auto-pausa preventiva: janela de rate limit quase cheia → espera antes de enviar
+    if(apiUsagePct()>=90){
+      const waitS=_apiUsage.regainMin?Math.min(180,Math.max(30,_apiUsage.regainMin*60)):30;
+      if(typeof plog==='function')plog(`⏸ Uso da API em ${apiUsagePct()}% — pausa preventiva de ${waitS}s...`,'loading');
+      toast(`Uso da API em ${apiUsagePct()}% — pausa preventiva de ${waitS}s`,'warning',Math.min(waitS*1000,8000));
+      await sleep(waitS*1000);
+    }
     let attempt = 0, r;
     while (attempt <= maxRetries) {
       try {
         r = await new Promise((res, rej) => {
-          window.FB.api('/', 'POST', { access_token: token, batch: JSON.stringify(chunks[ci]), include_headers: false }, resp => {
+          window.FB.api('/', 'POST', { access_token: token, batch: JSON.stringify(chunks[ci]), include_headers: true }, resp => {
             if (!Array.isArray(resp)) rej(new Error(resp?.error?.message || 'Batch error'));
             else res(resp);
           });
@@ -177,6 +222,7 @@ const batchApi = async (reqs, token, maxRetries=3) => {
       }
     }
     results.push(...r);
+    r.forEach(item=>_updateUsageFromHeaders(item?.headers));
     // Adaptive delay: more chunks = longer pause to avoid rate limit
     const baseDelay = chunks.length > 5 ? 1500 : chunks.length > 2 ? 800 : 400;
     await sleep(baseDelay);
@@ -730,6 +776,7 @@ function renderMain() {
         ${ac.map(a=>`<option value="${a.id}" ${S.selectedAccount?.id===a.id?'selected':''}>${acctStatus(a.account_status)} ${esc(a.name)} (${esc(accIdShort(a.id))})</option>`).join('')}
       </optgroup>` : ''; }).join('')}
     </select>
+    ${renderApiUsageBadge()}
   </div>` : '';
 
   return `<div style="display:flex;height:100vh;overflow:hidden;">
@@ -3949,13 +3996,23 @@ async function duplicateAdsetsFast(cid,asid){
     if(!confirm(aviso))return;
   }
   document.getElementById('dup-modal')?.remove();
-  toast(`Duplicando ${qty}× (cópia completa com anúncios)...`,'info',4000);
+  toast(`Duplicando ${qty}× em ritmo seguro (cópia completa com anúncios)...`,'info',3500);
   try{
-    // Endpoint nativo da Meta: deep_copy=true copia o conjunto E os anúncios
-    const reqs=Array.from({length:qty},()=>({method:'POST',relative_url:`${asid}/copies`,body:encodeBody({deep_copy:true,status_option:statusOption})}));
-    const res=await batchApi(reqs,S.token);
     let ok=0;const errs=[];
-    res.forEach(r=>{const p=parseBatch(r);if(p.error)errs.push(p.error.message);else ok++;});
+    for(let i=0;i<qty;i++){
+      // Auto-pausa: acima de 80% da janela, espera antes de continuar a série
+      if(i>0&&apiUsagePct()>=80){
+        const waitS=_apiUsage.regainMin?Math.min(180,Math.max(30,_apiUsage.regainMin*60)):30;
+        toast(`Uso da API em ${apiUsagePct()}% — pausando ${waitS}s antes da cópia ${i+1}/${qty}...`,'warning',Math.min(waitS*1000,8000));
+        await sleep(waitS*1000);
+      }
+      // Endpoint nativo: deep_copy=true copia o conjunto E os anúncios (1 chamada por cópia)
+      const res=await batchApi([{method:'POST',relative_url:`${asid}/copies`,body:encodeBody({deep_copy:true,status_option:statusOption})}],S.token);
+      const pr=parseBatch(res[0]);
+      if(pr.error){errs.push(`Cópia ${i+1}: ${pr.error.message}`);toast(`✗ Cópia ${i+1}/${qty}: ${pr.error.message}`,'error',4000);}
+      else{ok++;if(qty>1)toast(`✓ Cópia ${i+1}/${qty} criada`,'success',1200);}
+      if(i<qty-1)await sleep(2500); // ritmo: ~1 cópia a cada 2,5s para não saturar a janela
+    }
     if(ok)toast(`${ok}/${qty} cópia(s) criada(s)${statusOption==='PAUSED'?' (pausadas)':''}`,'success',4500);
     errs.slice(0,3).forEach(e=>toast(e,'error',6000));
     await loadEditorAdsets(cid);
