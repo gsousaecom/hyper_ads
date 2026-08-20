@@ -112,7 +112,7 @@ const loadFbSdk = appId => new Promise((res, rej) => {
   document.head.appendChild(s);
 });
 
-const fbApi = (path, params = {}) => new Promise((res, rej) => {
+const _fbApiOnce = (path, params = {}) => new Promise((res, rej) => {
   if (!window.FB) { rej(new Error('FB SDK não inicializado')); return; }
   const m = params._method || 'GET'; delete params._method;
   window.FB.api(path, m, params, r => {
@@ -121,6 +121,22 @@ const fbApi = (path, params = {}) => new Promise((res, rej) => {
     res(r);
   });
 });
+// Rate limit da Meta (17/4/32/80004): a chamada NÃO foi executada — seguro retentar
+const isRateLimitErr = e => /request limit|too many calls|rate limit|\(#(17|4|32)\)|80004/i.test(e?.message||'');
+const fbApi = async (path, params = {}, maxRetries = 3) => {
+  let attempt = 0;
+  while (true) {
+    try { return await _fbApiOnce(path, {...params}); }
+    catch (e) {
+      if (isRateLimitErr(e) && attempt < maxRetries) {
+        const delay = Math.pow(3, attempt) * 2000;
+        toast(`Limite de requisições da Meta — aguardando ${delay/1000}s e tentando de novo...`,'warning',delay);
+        await sleep(delay); attempt++; continue;
+      }
+      throw e;
+    }
+  }
+};
 
 const batchApi = async (reqs, token, maxRetries=3) => {
   if (!reqs.length) return [];
@@ -3766,6 +3782,7 @@ async function loadEditorAdsets(cid){
     try{
       S.campaignEditor.adsets=await fetchAllPages(`/${cid}/adsets`,{fields:fieldsFull,limit:100,access_token:S.token});
     }catch(e1){
+      if(isRateLimitErr(e1))throw e1; // rate limit: não dobra a pressão com fallback
       // Fallback: tenta sem targeting/bid_amount
       console.warn('Adsets fetch full failed, retrying without targeting:',e1.message);
       S.campaignEditor.adsets=await fetchAllPages(`/${cid}/adsets`,{fields:fieldsBasic,limit:100,access_token:S.token});
@@ -3785,6 +3802,7 @@ async function loadEditorAds(asid){
     try{
       S.campaignEditor.ads=await fetchAllPages(`/${asid}/ads`,{fields:fieldsFull,limit:100,access_token:S.token});
     }catch(e1){
+      if(isRateLimitErr(e1))throw e1;
       console.warn('Ads fetch full failed, retrying basic:',e1.message);
       S.campaignEditor.ads=await fetchAllPages(`/${asid}/ads`,{fields:fieldsBasic,limit:100,access_token:S.token});
     }
