@@ -2261,10 +2261,12 @@ function renderS3ForAdset(si){
 // Wizard de criação de novo conjunto em campanha existente
 // Steps do sub-wizard: Conjunto → Anúncio (ou 1 por conjunto se editAdsPerAdset) → Publicar
 function getSubWizardSteps(){
+  if(S.campaignEditor.subWizard?.addAdsTo)return ['Anúncio','Publicar'];
   const adSteps=(S.editAdsPerAdset&&S.ns>1)?Array.from({length:S.ns},(_,i)=>`Anúncio Conj ${i+1}`):['Anúncio'];
   return ['Conjunto',...adSteps,'Publicar'];
 }
 function getSubWizardStepInfo(idx){
+  if(S.campaignEditor.subWizard?.addAdsTo)return idx<=0?{type:'anuncio',adsetIdx:-1}:{type:'publicar',adsetIdx:-1};
   const steps=getSubWizardSteps();
   if(idx<=0)return {type:'conjunto',adsetIdx:-1};
   if(idx>=steps.length-1)return {type:'publicar',adsetIdx:-1};
@@ -2295,7 +2297,7 @@ function renderSubAdsetWizard(){
       <div style="display:flex;align-items:center;gap:.75rem;min-width:0;">
         <button onclick="if(confirm('Cancelar criação do novo conjunto? Mudanças serão perdidas.')){closeSubAdsetWizard();}" style="background:transparent;border:none;color:#1a2440;cursor:pointer;font-size:1rem;font-weight:700;">←</button>
         <div style="min-width:0;">
-          <p style="font-size:.65rem;color:var(--text-muted);margin:0;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">${S.ns>1?S.ns+' novos conjuntos em':'Novo Conjunto em'}</p>
+          <p style="font-size:.65rem;color:var(--text-muted);margin:0;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">${w.addAdsTo?'+'+S.na+' anúncio'+(S.na>1?'s':'')+' no conjunto "'+esc(w.addAdsTo.name)+'" de':S.ns>1?S.ns+' novos conjuntos em':'Novo Conjunto em'}</p>
           <h2 style="font-weight:800;font-size:1rem;margin:.125rem 0 0;color:#1a2440;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.name||'Campanha')}</h2>
         </div>
       </div>
@@ -2313,6 +2315,36 @@ function renderSubAdsetWizard(){
 function renderSubAdsetPublishStep(){
   const w=S.campaignEditor.subWizard;if(!w)return '';
   const c=w.campaign;
+  if(w.addAdsTo){
+    if(w.pubFinished){
+      const okColor=w.pubErrors.length?'#CA8A04':'#16A34A';
+      return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.875rem;padding:1.5rem;text-align:center;">
+        <div style="font-size:3rem;margin-bottom:.75rem;">${w.pubErrors.length?'⚠️':'🎉'}</div>
+        <h3 style="font-size:1.25rem;font-weight:800;margin:0 0 .5rem;color:${okColor};">${w.pubErrors.length?'Concluído com avisos':'Anúncios adicionados!'}</h3>
+        <p style="font-size:.875rem;color:var(--text-secondary);margin:0 0 1.25rem;">${w.adsOk||0}/${w.adsTotal||S.na} anúncio${(w.adsTotal||S.na)>1?'s':''} adicionado${(w.adsTotal||S.na)>1?'s':''} em "${esc(w.addAdsTo.name)}"</p>
+        <button onclick="closeSubAdsetWizard()" style="padding:.625rem 1.25rem;background:var(--accent);color:white;border:none;border-radius:.625rem;font-weight:700;font-size:.85rem;cursor:pointer;">Voltar à campanha</button>
+        ${w.pubErrors.length?`<div style="margin-top:1rem;background:#FEF2F2;border:1px solid #FECACA;border-radius:.625rem;padding:.875rem;text-align:left;">
+          <p style="font-size:.75rem;font-weight:700;color:#DC2626;margin:0 0 .5rem;">Erros (${w.pubErrors.length}):</p>
+          ${w.pubErrors.map(e=>`<p style="font-size:.7rem;color:#DC2626;margin:.125rem 0;">${esc(e)}</p>`).join('')}
+        </div>`:''}
+      </div>`;
+    }
+    return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.875rem;padding:1.25rem;">
+      <h3 style="font-size:1rem;font-weight:800;margin:0 0 .75rem;color:var(--text-primary);">Pronto para adicionar</h3>
+      <div style="background:var(--bg-secondary);border-radius:.625rem;padding:.875rem;margin-bottom:1rem;">
+        <div style="display:flex;flex-direction:column;gap:.375rem;">
+          <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Conjunto de destino</span><span style="font-weight:600;color:var(--text-primary);text-align:right;">${esc(w.addAdsTo.name)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Novos anúncios</span><span style="font-weight:600;color:var(--text-primary);">${S.na}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--text-muted);">Página</span><span style="font-weight:600;color:var(--text-primary);">${esc(S.da.pageName||S.da.pageId||'—')}</span></div>
+        </div>
+      </div>
+      <div style="margin-bottom:1rem;">${sel('Status dos novos anúncios','addads-status',[['PAUSED','Pausados (recomendado)'],['ACTIVE','Ativos — começam a rodar imediatamente']],S.cc.status,"S.cc.status=this.value")}</div>
+      ${!w.pubRunning?`<button onclick="publishSubAdset()" style="width:100%;padding:.875rem;background:var(--accent);color:white;border:none;border-radius:.75rem;font-weight:800;font-size:.95rem;cursor:pointer;">⚡ Adicionar ${S.na} anúncio${S.na>1?'s':''}</button>`:`<div style="display:flex;align-items:center;justify-content:center;padding:.875rem;background:rgba(215,250,0,.15);border-radius:.75rem;gap:.5rem;color:var(--text-primary);font-weight:700;"><div style="width:16px;height:16px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;" class="spin"></div>Publicando...</div>`}
+      ${w.pubLog.length?`<div style="background:#020617;border-radius:.625rem;padding:.625rem;font-family:monospace;font-size:.7rem;max-height:200px;overflow-y:auto;margin-top:.75rem;color:#94A3B8;display:flex;flex-direction:column;gap:.125rem;">
+        ${w.pubLog.slice(-30).map(l=>`<span style="color:${l.t==='error'?'#EF4444':l.t==='success'?'#22C55E':l.t==='loading'?'#F59E0B':'#94A3B8'};">${esc(l.m)}</span>`).join('')}
+      </div>`:''}
+    </div>`;
+  }
   if(w.pubFinished){
     const okColor=w.pubErrors.length?'#CA8A04':'#16A34A';
     return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.875rem;padding:1.5rem;text-align:center;">
@@ -2579,6 +2611,7 @@ function renderCampaignDetail(){
               <p style="font-size:.65rem;color:var(--text-muted);margin:.125rem 0 0;">${countries||'—'} · ${as.daily_budget?'$'+(as.daily_budget/100).toFixed(2)+'/d':as.lifetime_budget?'$'+(as.lifetime_budget/100).toFixed(2):'CBO'}</p>
             </div>
             ${statusBadge(as.status)}
+            <button onclick="event.stopPropagation();showAddAdsModal('${cid}','${as.id}')" title="Adicionar anúncios a este conjunto" style="width:26px;height:26px;border:1.5px solid var(--border);border-radius:.5rem;background:var(--bg-card);color:var(--text-secondary);cursor:pointer;font-size:.85rem;flex-shrink:0;line-height:1;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">➕</button>
             <button onclick="event.stopPropagation();showDuplicateAdsetModal('${cid}','${as.id}')" title="Duplicar conjunto" style="width:26px;height:26px;border:1.5px solid var(--border);border-radius:.5rem;background:var(--bg-card);color:var(--text-secondary);cursor:pointer;font-size:.85rem;flex-shrink:0;line-height:1;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">⧉</button>
             <button onclick="event.stopPropagation();toggleAdsetStatus('${as.id}','${as.status}')" style="width:36px;height:20px;border-radius:99px;background:${as.status==='ACTIVE'?'#1a2440':'var(--border)'};border:none;cursor:pointer;position:relative;flex-shrink:0;">
               <div style="position:absolute;top:2px;width:16px;height:16px;background:var(--bg-card);border-radius:50%;box-shadow:0 1px 2px rgba(0,0,0,.2);left:${as.status==='ACTIVE'?'18px':'2px'};transition:left .15s;"></div>
@@ -4065,6 +4098,59 @@ function prefillFromAdset(as,ads){
   S.da.primaryTexts=[cp0.primaryText||''];S.da.headlines=[cp0.headline||''];
 }
 
+// ── Adicionar anúncios a um conjunto existente ─────────────────────────────
+function showAddAdsModal(cid,asid){
+  const as=S.campaignEditor.adsets.find(x=>x.id===asid);
+  const name=as?.name||asid;
+  const m=document.createElement('div');m.id='addads-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  m.innerHTML=`<div style="background:var(--bg-card);border-radius:1rem;width:100%;max-width:400px;overflow:hidden;box-shadow:0 25px 50px rgba(0,0,0,.3);">
+    <div style="padding:1.25rem 1.5rem;background:#1a2440;">
+      <h3 style="font-weight:800;margin:0;color:white;font-size:1rem;">➕ Adicionar Anúncios</h3>
+      <p style="font-size:.75rem;color:#8896ab;margin:.25rem 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">no conjunto "${esc(name)}"</p>
+    </div>
+    <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
+      <div style="text-align:center;background:var(--bg-secondary);border-radius:.75rem;padding:1.25rem;border:1.5px solid var(--border);">
+        <p style="font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 .75rem;">Quantos anúncios novos?</p>
+        <input id="addads-qty" type="number" min="1" max="30" value="1"
+          style="width:120px;text-align:center;font-size:2rem;font-weight:900;color:var(--text-primary);border:2px solid var(--border);border-radius:.75rem;padding:.5rem;outline:none;background:var(--bg-card);"
+          onfocus="this.style.borderColor='var(--accent)';this.select()" onblur="this.style.borderColor='var(--border)'"
+          onkeydown="if(event.key==='Enter')document.getElementById('addads-go').click()"/>
+        <p style="font-size:.7rem;color:var(--text-muted);margin:.5rem 0 0;">máx. 30 · página, URL e UTMs dos anúncios atuais vêm pré-preenchidos</p>
+      </div>
+      <div style="display:flex;gap:.75rem;">
+        <button onclick="document.getElementById('addads-modal').remove()" style="flex:1;padding:.75rem;border:1.5px solid var(--border);border-radius:.75rem;background:var(--bg-card);color:var(--text-secondary);font-weight:600;font-size:.875rem;cursor:pointer;">Cancelar</button>
+        <button id="addads-go" onclick="(()=>{const q=parseInt(document.getElementById('addads-qty')?.value)||1;document.getElementById('addads-modal').remove();openAddAdsWizard('${cid}','${asid}',q);})()" style="flex:1;padding:.75rem;border:none;border-radius:.75rem;background:var(--accent);color:white;font-weight:700;font-size:.875rem;cursor:pointer;">Continuar →</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  setTimeout(()=>document.getElementById('addads-qty')?.focus(),50);
+}
+
+async function openAddAdsWizard(cid,asid,qty){
+  const asRow=S.campaignEditor.adsets.find(x=>x.id===asid);
+  toast('Carregando contexto do conjunto...','info',2000);
+  // Puxa 1 anúncio existente para pré-preencher página/URL/CTA/UTMs (mídia e copy ficam em branco: anúncios NOVOS)
+  let ads=[];
+  try{ads=await fetchAllPages(`/${asid}/ads`,{fields:'id,name,creative{object_story_spec,url_tags}',limit:3,access_token:S.token});}catch{}
+  openSubAdsetWizard(cid,qty,1);
+  if(!S.campaignEditor.subWizard)return;
+  const spec=ads.find(a=>a.creative?.object_story_spec)?.creative;
+  if(spec){
+    const fs=spec.object_story_spec,ld=fs.link_data,vd=fs.video_data;
+    S.da.pageId=fs.page_id||S.da.pageId;
+    S.da.pageName=S.pages.find(p=>p.id===fs.page_id)?.name||'';
+    S.da.linkUrl=ld?.link||vd?.call_to_action?.value?.link||S.da.linkUrl;
+    S.da.cta=ld?.call_to_action?.type||vd?.call_to_action?.type||S.da.cta;
+    if(spec.url_tags)S.da.urlParams=spec.url_tags;
+  }
+  S.campaignEditor.subWizard.addAdsTo={asid,name:asRow?.name||asid};
+  S.campaignEditor.subWizard.step=0;
+  toast('Defina os '+qty+' novo'+(qty>1?'s':'')+' anúncio'+(qty>1?'s':'')+' — mídia e copy em branco de propósito','success',3500);
+  R();
+}
+
 async function openDuplicateEditWizard(cid,asid){
   document.getElementById('dup-modal')?.remove();
   toast('Carregando configurações do conjunto...','info',2500);
@@ -4195,8 +4281,8 @@ async function publishSubAdset(){
   w.pubRunning=true;w.pubFinished=false;w.pubLog=[];w.pubErrors=[];R();
   stopPub=false;
   try{
-    // Validação estrutural (páginas/URLs por conjunto, orçamento) — igual ao lançamento em massa
-    const errs=validatePubStructure();
+    // Modo "adicionar anúncios": valida só o necessário do anúncio (sem orçamento/países)
+    const errs=w.addAdsTo?validateStepType({type:'anuncio',adsetIdx:-1}):validatePubStructure();
     if(errs.length){errs.forEach(e=>{subWizardLog('⚠️ '+e,'error');w.pubErrors.push(e);});w.pubRunning=false;w.pubFinished=true;R();return;}
     // Valida cada Page ID efetivo
     for(const pid of allEffectivePageIds()){
@@ -4205,13 +4291,13 @@ async function publishSubAdset(){
       catch(e){subWizardLog(`✗ Page ID inválido (${pid}): ${e.message}`,'error');w.pubErrors.push('Page ID inválido: '+e.message);w.pubRunning=false;w.pubFinished=true;R();return;}
     }
     // Conjuntos + criativos + anúncios na campanha existente (fases 1-3 aqui)
-    const res=await publishAdsetsAndAds([cid],{log:subWizardLog,phaseLabel:n=>`FASE ${n-1}/3`});
+    const res=await publishAdsetsAndAds([cid],{log:subWizardLog,phaseLabel:n=>w.addAdsTo?(n<=2?'PREPARO':`FASE ${n-2}/2`):`FASE ${n-1}/3`,existingAdsetIds:w.addAdsTo?[w.addAdsTo.asid]:null});
     w.createdAdsetIds=res.adsetIds.filter(Boolean);
     w.createdAdsetId=w.createdAdsetIds[0]||null;
     w.adsetsOk=res.adsetsOk;w.adsetsTotal=res.adsetsTotal;w.adsOk=res.adsOk;w.adsTotal=res.adsTotal;
-    if(res.adsetsOk<res.adsetsTotal)w.pubErrors.push(`${res.adsetsTotal-res.adsetsOk} conjunto(s) não criado(s) — veja o log.`);
+    if(!w.addAdsTo&&res.adsetsOk<res.adsetsTotal)w.pubErrors.push(`${res.adsetsTotal-res.adsetsOk} conjunto(s) não criado(s) — veja o log.`);
     if(res.adsOk<res.adsTotal)w.pubErrors.push(`${res.adsTotal-res.adsOk} anúncio(s) não criado(s) — veja o log.`);
-    subWizardLog(`🎉 Concluído! Conjuntos:${res.adsetsOk}/${res.adsetsTotal} | Anúncios:${res.adsOk}/${res.adsTotal}`,res.adsetsOk===res.adsetsTotal&&res.adsOk===res.adsTotal?'success':'loading');
+    subWizardLog(w.addAdsTo?`🎉 Concluído! Anúncios adicionados:${res.adsOk}/${res.adsTotal}`:`🎉 Concluído! Conjuntos:${res.adsetsOk}/${res.adsetsTotal} | Anúncios:${res.adsOk}/${res.adsTotal}`,res.adsOk===res.adsTotal&&(w.addAdsTo||res.adsetsOk===res.adsetsTotal)?'success':'loading');
   } catch(e){
     if(e.message==='stop')subWizardLog('⏹ Interrompido','error');else subWizardLog(`✗ ${e.message}`,'error');
     w.pubErrors.push(e.message);
@@ -4319,11 +4405,18 @@ function allEffectivePageIds(){
 }
 // Cria conjuntos + criativos + anúncios para as campanhas `cids` (IDs já existentes).
 // Usa exatamente a mesma hierarquia de mídia/copy/página do lançamento em massa.
-async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FASE ${n}/4`}={}){
+async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FASE ${n}/4`,existingAdsetIds=null}={}){
   const plog=log;
   const {ns,na}=S,cc=S.cc,ds=S.ds,da=S.da,mode=S.creativeMode||'single';
-  plog(`━━ ${phaseLabel(2)} — ${cids.filter(Boolean).length*ns} conjuntos`,'loading');
   const ar=[],am=[];
+  let aids=null;
+  if(existingAdsetIds&&existingAdsetIds.length){
+    // Modo "adicionar anúncios": os conjuntos já existem — pula a fase de criação
+    aids=existingAdsetIds.slice();
+    aids.forEach((_,i)=>am.push({ci:0,si:i}));
+    plog(`━━ ${phaseLabel(2)} — ${aids.length} conjunto(s) existente(s), criação pulada`,'info');
+  }else{
+  plog(`━━ ${phaseLabel(2)} — ${cids.filter(Boolean).length*ns} conjuntos`,'loading');
   cids.forEach((cid,ci)=>{
     if(!cid)return;
     for(let si=0;si<ns;si++){
@@ -4347,8 +4440,9 @@ async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FAS
     }
   });
   const ab=await batchApi(ar,S.token);bump(Math.ceil(ar.length/50));
-  const aids=ab.map((r,i)=>{const p=parseBatch(r);if(p.error){plog(`  ✗ Set C${am[i].ci+1}S${am[i].si+1}: ${p.error.message}`,'error');return null;}return p.id;});
+  aids=ab.map((r,i)=>{const p=parseBatch(r);if(p.error){plog(`  ✗ Set C${am[i].ci+1}S${am[i].si+1}: ${p.error.message}`,'error');return null;}return p.id;});
   plog(`  ${aids.filter(Boolean).length}/${ar.length} conjuntos criados`,'info');
+  }
   if(stopPub)throw new Error('stop');
 
   plog(`━━ ${phaseLabel(3)} — criativos`,'loading');
@@ -4475,7 +4569,7 @@ async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FAS
   const aab=await batchApi(aq,S.token);bump(Math.ceil(aq.length/50));
   const ok=aab.filter(r=>!parseBatch(r).error).length;
   plog(`  ${ok}/${aq.length} anúncios criados`,'info');
-  return {adsetIds:aids,adsetsOk:aids.filter(Boolean).length,adsetsTotal:ar.length,adsOk:ok,adsTotal:aq.length};
+  return {adsetIds:aids,adsetsOk:aids.filter(Boolean).length,adsetsTotal:existingAdsetIds?aids.length:ar.length,adsOk:ok,adsTotal:aq.length};
 }
 
 async function startPub(){
