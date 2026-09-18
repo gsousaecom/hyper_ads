@@ -1,0 +1,25 @@
+{
+  "produto": "SlimTea Detox",
+  "descricao": "Chá funcional em sachês com blend de hibisco, gengibre e chá verde, pensado para acompanhar rotinas de emagrecimento saudável.",
+  "publico_alvo": "Mulheres de 30 a 55 anos que já tentaram dietas restritivas, buscam praticidade e compram por Instagram/Facebook.",
+  "oferta": "Kit 3 meses por R$ 197 (de R$ 297), frete grátis e garantia de 30 dias.",
+  "tipo_pagina": "advertorial",
+  "idioma": "pt-BR",
+  "tom": "conversacional, empático e direto",
+  "diferenciais": [
+    "Ingredientes 100% naturais",
+    "Aprovado pela ANVISA como alimento",
+    "Sachês individuais, sem preparo complicado"
+  ],
+  "objecoes": [
+    "Já tentei chás e não funcionou",
+    "Deve ter gosto ruim",
+    "É caro para um chá"
+  ],
+  "provas_sociais": [
+    "Mais de 12.000 clientes atendidas desde 2022",
+    "Nota 4,8/5 em 900+ avaliações no site"
+  ],
+  "url_checkout": "https://exemplo.com/checkout/slimtea",
+  "observacoes": "Não prometer emagrecimento sem dieta; posicionar como apoio à rotina saudável."
+}
