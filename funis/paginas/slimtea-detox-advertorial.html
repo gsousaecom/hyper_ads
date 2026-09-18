@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Por que 9 em cada 10 dietas falham depois dos 30 — e o ritual de 3 minutos que está mudando a rotina de milhares de brasileiras</title>
+<meta name="description" content="Não é falta de força de vontade. Um erro invisível sabota quase toda tentativa de emagrecer — e a solução pode ser muito mais simples (e gostosa) do que você imagina.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1d232b;
+    --ink-soft:#4a5460;
+    --paper:#ffffff;
+    --paper-soft:#f6f4ef;
+    --rule:#e4e0d7;
+    --accent:#0d7a5f;
+    --accent-dark:#0a614c;
+    --cta:#e8590c;
+    --cta-dark:#c94a08;
+    --highlight:#ffe86b;
+    --price:#0d7a5f;
+    --serif:'Lora', Georgia, 'Times New Roman', serif;
+    --sans:'Inter', -apple-system, 'Segoe UI', Arial, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:var(--serif);
+    color:var(--ink);
+    background:var(--paper);
+    font-size:1.125rem;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    width:100%;
+    max-width:680px;
+    margin:0 auto;
+    padding:0 20px;
+  }
+  /* ---------- Cabeçalho editorial ---------- */
+  .site-header{
+    border-bottom:1px solid var(--rule);
+    background:var(--paper);
+  }
+  .site-header .wrap{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding-top:14px;
+    padding-bottom:14px;
+  }
+  .masthead{
+    font-family:var(--sans);
+    font-weight:800;
+    font-size:1.05rem;
+    letter-spacing:.04em;
+    color:var(--ink);
+  }
+  .masthead span{color:var(--accent);}
+  .section-tag{
+    font-family:var(--sans);
+    font-size:.72rem;
+    font-weight:700;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    border:1px solid var(--rule);
+    border-radius:999px;
+    padding:5px 12px;
+    white-space:nowrap;
+  }
+  .meta-bar{
+    font-family:var(--sans);
+    font-size:.82rem;
+    color:var(--ink-soft);
+    padding:14px 0 4px;
+  }
+  .meta-bar .badge{
+    display:inline-block;
+    background:var(--paper-soft);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    padding:2px 8px;
+    font-weight:700;
+    color:var(--accent-dark);
+    margin-right:8px;
+  }
+  /* ---------- Título ---------- */
+  h1{
+    font-size:1.85rem;
+    line-height:1.25;
+    font-weight:700;
+    margin:18px 0 14px;
+    letter-spacing:-.01em;
+  }
+  .subhead{
+    font-size:1.15rem;
+    line-height:1.55;
+    color:var(--ink-soft);
+    font-weight:400;
+    font-style:italic;
+    margin-bottom:24px;
+  }
+  h2{
+    font-family:var(--sans);
+    font-size:1.35rem;
+    line-height:1.3;
+    font-weight:800;
+    margin:44px 0 16px;
+    letter-spacing:-.01em;
+  }
+  h3{
+    font-family:var(--sans);
+    font-size:1.1rem;
+    font-weight:700;
+    margin:28px 0 10px;
+  }
+  p{margin:0 0 18px;}
+  strong{font-weight:700;}
+  em{font-style:italic;}
+  ul,ol{margin:0 0 20px;padding-left:24px;}
+  li{margin-bottom:12px;}
+  /* ---------- Placeholder de imagem ---------- */
+  .img-placeholder{
+    background:repeating-linear-gradient(45deg,#eef2f0,#eef2f0 14px,#e5ebe8 14px,#e5ebe8 28px);
+    border:2px dashed #b8c4be;
+    border-radius:10px;
+    padding:44px 22px;
+    margin:26px 0;
+    text-align:center;
+    font-family:var(--sans);
+    font-size:.92rem;
+    line-height:1.5;
+    color:#546258;
+  }
+  .img-placeholder::before{
+    content:"IMAGEM";
+    display:block;
+    font-weight:800;
+    letter-spacing:.18em;
+    font-size:.72rem;
+    color:#7b8a80;
+    margin-bottom:10px;
+  }
+  /* ---------- Marcador VALIDAR ---------- */
+  .validar{
+    background:var(--highlight);
+    color:#4a3c00;
+    font-family:var(--sans);
+    font-size:.85rem;
+    font-weight:700;
+    padding:2px 7px;
+    border-radius:4px;
+    border:1px solid #e3c400;
+    display:inline-block;
+    line-height:1.4;
+  }
+  /* ---------- Destaques ---------- */
+  .lead-quote{
+    border-left:4px solid var(--accent);
+    background:var(--paper-soft);
+    padding:16px 20px;
+    margin:0 0 20px;
+    font-style:italic;
+  }
+  .divider{
+    border:none;
+    border-top:1px solid var(--rule);
+    margin:40px auto;
+    width:120px;
+  }
+  /* ---------- CTAs ---------- */
+  .cta-inline{
+    display:block;
+    text-align:center;
+    font-family:var(--sans);
+    font-size:1.1rem;
+    font-weight:700;
+    color:var(--accent-dark);
+    text-decoration:underline;
+    text-underline-offset:4px;
+    margin:8px 0 26px;
+  }
+  .cta-btn{
+    display:block;
+    width:100%;
+    background:var(--cta);
+    color:#fff;
+    font-family:var(--sans);
+    font-size:1.12rem;
+    font-weight:800;
+    text-align:center;
+    text-decoration:none;
+    line-height:1.35;
+    padding:18px 22px;
+    border-radius:12px;
+    box-shadow:0 4px 14px rgba(232,89,12,.32);
+    margin:10px 0 30px;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .cta-btn:hover,.cta-btn:focus{background:var(--cta-dark);}
+  .cta-btn:active{transform:scale(.985);}
+  /* ---------- Prova social ---------- */
+  .social-banner{
+    background:var(--paper-soft);
+    border:1px solid var(--rule);
+    border-radius:10px;
+    padding:16px 20px;
+    text-align:center;
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:1rem;
+    margin:0 0 22px;
+  }
+  .testimonial{
+    border:1px solid var(--rule);
+    border-radius:10px;
+    padding:18px 20px;
+    margin-bottom:16px;
+    background:#fff;
+  }
+  .testimonial .who{
+    font-family:var(--sans);
+    font-weight:800;
+    font-size:.95rem;
+    margin-bottom:6px;
+  }
+  .testimonial .stars{
+    color:#f0a500;
+    font-size:.9rem;
+    letter-spacing:2px;
+  }
+  .testimonial p{margin:8px 0 0;font-size:1.02rem;}
+  /* ---------- Box da oferta ---------- */
+  .offer-box{
+    background:linear-gradient(180deg,#f2faf6 0%,#e9f6ef 100%);
+    border:2px solid var(--accent);
+    border-radius:14px;
+    padding:26px 22px;
+    margin:26px 0 8px;
+    text-align:center;
+  }
+  .offer-box h3{
+    font-size:1.3rem;
+    margin:0 0 12px;
+    color:var(--accent-dark);
+  }
+  .price-old{
+    text-decoration:line-through;
+    color:var(--ink-soft);
+    font-family:var(--sans);
+    font-size:1.1rem;
+  }
+  .price-new{
+    font-family:var(--sans);
+    font-weight:800;
+    font-size:2rem;
+    color:var(--price);
+    display:inline-block;
+    margin:0 6px;
+  }
+  .price-line{margin-bottom:14px;}
+  .offer-list{
+    list-style:none;
+    padding:0;
+    margin:0 0 16px;
+    text-align:left;
+    font-family:var(--sans);
+    font-size:.98rem;
+  }
+  .offer-list li{
+    padding-left:2px;
+    margin-bottom:8px;
+  }
+  .offer-note{
+    font-size:1rem;
+    margin-bottom:12px;
+  }
+  .offer-seal{
+    font-family:var(--sans);
+    font-size:.82rem;
+    font-style:italic;
+    color:var(--ink-soft);
+    margin-bottom:0;
+  }
+  /* ---------- Garantia ---------- */
+  .guarantee{
+    border:1px dashed var(--accent);
+    border-radius:12px;
+    background:#f7fbf9;
+    padding:22px;
+    margin:10px 0 20px;
+  }
+  /* ---------- FAQ ---------- */
+  .faq-item{
+    border-bottom:1px solid var(--rule);
+    padding:6px 0;
+  }
+  .faq-item summary{
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:1.02rem;
+    cursor:pointer;
+    padding:12px 28px 12px 0;
+    list-style:none;
+    position:relative;
+  }
+  .faq-item summary::-webkit-details-marker{display:none;}
+  .faq-item summary::after{
+    content:"+";
+    position:absolute;
+    right:2px;
+    top:50%;
+    transform:translateY(-50%);
+    font-size:1.4rem;
+    color:var(--accent);
+    font-weight:400;
+  }
+  .faq-item[open] summary::after{content:"–";}
+  .faq-item p{padding:0 0 14px;font-size:1.05rem;}
+  /* ---------- Fechamento / preço final ---------- */
+  .final-price{
+    background:var(--paper-soft);
+    border-left:4px solid var(--accent);
+    padding:16px 20px;
+    margin:0 0 18px;
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:1.05rem;
+  }
+  /* ---------- Rodapé ---------- */
+  .site-footer{
+    border-top:1px solid var(--rule);
+    margin-top:48px;
+    padding:26px 0 130px; /* espaço para a barra fixa */
+    background:var(--paper-soft);
+  }
+  .site-footer p{
+    font-family:var(--sans);
+    font-size:.82rem;
+    line-height:1.6;
+    color:var(--ink-soft);
+    font-style:italic;
+    margin:0;
+  }
+  /* ---------- Barra fixa inferior (mobile) ---------- */
+  .sticky-cta{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    background:#fff;
+    border-top:1px solid var(--rule);
+    box-shadow:0 -4px 16px rgba(0,0,0,.12);
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    z-index:50;
+    transform:translateY(110%);
+    transition:transform .3s ease;
+  }
+  .sticky-cta.visible{transform:translateY(0);}
+  .sticky-cta .price-info{
+    font-family:var(--sans);
+    line-height:1.2;
+    white-space:nowrap;
+  }
+  .sticky-cta .price-info .old{
+    display:block;
+    font-size:.75rem;
+    color:var(--ink-soft);
+    text-decoration:line-through;
+  }
+  .sticky-cta .price-info .now{
+    display:block;
+    font-size:1.2rem;
+    font-weight:800;
+    color:var(--price);
+  }
+  .sticky-cta .btn{
+    flex:1;
+    background:var(--cta);
+    color:#fff;
+    font-family:var(--sans);
+    font-weight:800;
+    font-size:.98rem;
+    text-align:center;
+    text-decoration:none;
+    padding:14px 12px;
+    border-radius:10px;
+    line-height:1.2;
+  }
+  .sticky-cta .btn:active{background:var(--cta-dark);}
+  /* ---------- Desktop ---------- */
+  @media (min-width:768px){
+    body{font-size:1.19rem;}
+    h1{font-size:2.5rem;margin-top:26px;}
+    .subhead{font-size:1.3rem;}
+    h2{font-size:1.6rem;}
+    .cta-btn{max-width:520px;margin-left:auto;margin-right:auto;}
+    .site-footer{padding-bottom:34px;}
+  }
+  @media (max-width:767.98px){
+    .sticky-cta{display:flex;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    .sticky-cta{transition:none;}
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <div class="masthead">Viver<span>Bem</span> Portal</div>
+    <div class="section-tag">Bem-estar</div>
+  </div>
+</header>
+
+<main>
+  <article class="wrap">
+
+    <!-- Selo editorial -->
+    <div class="meta-bar" role="doc-subtitle">
+      <span class="badge">Bem-estar | Publieditorial</span>
+      Publicado em 18 de setembro de 2026 &middot; Leitura: 6 minutos
+    </div>
+
+    <!-- Manchete + subtítulo -->
+    <h1>Por que 9 em cada 10 dietas falham depois dos 30 — e o ritual de 3 minutos que está mudando a rotina de milhares de brasileiras</h1>
+    <p class="subhead">Não é falta de força de vontade. Um erro invisível sabota quase toda tentativa de emagrecer — e a solução pode ser muito mais simples (e gostosa) do que você imagina.</p>
+
+    <div class="img-placeholder" role="img" aria-label="Espaço reservado para imagem principal da matéria">
+      Mulher de aproximadamente 40 anos, sorrindo com naturalidade, segurando uma caneca de chá na cozinha de casa, luz de manhã, clima real e acolhedor — sem estética de "antes e depois"
+    </div>
+
+    <!-- Abertura: a história da Ana -->
+    <p>Ana tem 42 anos, dois filhos, um trabalho que come 9 horas do dia dela e uma gaveta que conta uma história que talvez você conheça bem.</p>
+    <p>Na gaveta: um pote de shake pela metade, um caderninho de dieta low carb abandonado na segunda semana e um aplicativo de jejum intermitente que ela nem lembra mais a senha.</p>
+    <div class="lead-quote">
+      <p style="margin:0">"Eu começava toda segunda-feira", ela conta. "Cortava tudo: pão, doce, arroz. Aguentava dez, quinze dias. Aí vinha uma festa de aniversário, uma semana pesada no trabalho... e eu desmoronava. Comia tudo em dobro e ainda me sentia culpada."</p>
+    </div>
+    <p>O resultado ela resume em uma palavra que quase toda mulher acima dos 30 já usou: <strong>sanfona</strong>. Perde 3 quilos, recupera 4. Perde 5, recupera 6. E, pior que o peso, vem o pensamento que corrói por dentro: <em>"o problema sou eu"</em>.</p>
+    <p>Spoiler: o problema não era a Ana. E provavelmente também não é você.</p>
+
+    <hr class="divider">
+
+    <!-- O erro invisível -->
+    <h2>O erro invisível das dietas restritivas</h2>
+    <p>Conversamos com nutricionistas e pesquisamos o que a ciência do comportamento diz sobre dietas — e o padrão é claro: <strong>dietas radicais falham porque exigem que você mude tudo de uma vez.</strong></p>
+    <p>Pense no que uma dieta restritiva pede: cortar grupos inteiros de alimentos, cozinhar diferente, comer diferente da família, dizer não em todo evento social, contar caloria, pesar comida. Tudo isso em cima de uma rotina que já está no limite.</p>
+    <p>O corpo até aguenta. A rotina, não.</p>
+    <p>É por isso que a maioria desiste entre a segunda e a quarta semana — não por fraqueza, mas porque <strong>nenhum hábito sobrevive quando depende de esforço heroico todos os dias</strong>.</p>
+    <p>O que a ciência do hábito mostra é o oposto: quem consegue manter mudanças de longo prazo geralmente começa com <strong>micro-hábitos</strong> — rituais pequenos, prazerosos e fáceis de repetir, que funcionam como âncora para o resto da rotina saudável. <mark class="validar">[VALIDAR: substituir por prova real antes de publicar]</mark></p>
+    <p>E aqui entra um detalhe importante para quem já tentou chá antes e se decepcionou: <strong>chá nenhum emagrece ninguém sozinho.</strong> Quem vendeu chá para você como solução mágica mentiu — e foi por isso que "não funcionou". O papel certo de um bom chá funcional é outro: ser o ritual diário que sustenta a constância. O gatilho pequeno que mantém você no jogo.</p>
+    <p>Foi exatamente isso que mudou a história da Ana.</p>
+
+    <hr class="divider">
+
+    <!-- A descoberta -->
+    <h2>A descoberta — SlimTea Detox</h2>
+    <p>Foi a nutricionista de uma amiga quem sugeriu: "Para de tentar revolução. Cria um ritual pequeno que você goste, e constrói o resto em volta dele."</p>
+    <p>A amiga indicou o que ela mesma usava: o <strong>SlimTea Detox</strong>, um chá funcional em sachês individuais que combina três ingredientes conhecidos de quem estuda alimentação saudável:</p>
+    <ul>
+      <li><strong>Hibisco</strong> — sabor levemente azedinho e refrescante, tradicionalmente associado à sensação de leveza e ao bom funcionamento da digestão;</li>
+      <li><strong>Gengibre</strong> — o toque picante que aquece, termogênico natural presente em praticamente toda rotina de alimentação equilibrada;</li>
+      <li><strong>Chá verde</strong> — fonte natural de energia e companheiro clássico de quem cuida do metabolismo e da disposição no dia a dia.</li>
+    </ul>
+
+    <div class="img-placeholder" role="img" aria-label="Espaço reservado para imagem do kit SlimTea Detox">
+      Kit SlimTea Detox de 3 meses — caixas e sachês individuais dispostos sobre bancada clara, com hibisco desidratado, lascas de gengibre e folhas de chá verde ao redor
+    </div>
+
+    <p>Três coisas fizeram a Ana topar experimentar:</p>
+    <ol>
+      <li><strong>100% natural</strong> — sem componentes sintéticos na fórmula;</li>
+      <li><strong>Aprovado pela ANVISA como alimento</strong> — registro regular, sem promessas escondidas;</li>
+      <li><strong>Sachês individuais, prontos em 3 minutos</strong> — sem balança, sem coador, sem receita. Água quente, sachê, pronto.</li>
+    </ol>
+    <p>"Eu não precisei mudar nada da minha rotina para começar", diz Ana. "E acho que foi por isso que, pela primeira vez, eu continuei."</p>
+
+    <!-- CTA nº 1 — link textual -->
+    <a class="cta-inline" href="https://exemplo.com/checkout/slimtea" aria-label="Veja aqui o kit que a Ana usou — abrir página de compra">👉 Veja aqui o kit que a Ana usou</a>
+
+    <hr class="divider">
+
+    <!-- Ritual de 3 minutos -->
+    <h2>O ritual de 3 minutos na prática</h2>
+    <p>O que a Ana faz — e o que milhares de clientes do SlimTea relatam fazer — é simples de propósito:</p>
+    <ol>
+      <li><strong>Manhã ou tarde:</strong> esquente uma xícara de água (ou use a do escritório mesmo);</li>
+      <li><strong>Coloque 1 sachê</strong> e espere 3 minutos;</li>
+      <li><strong>Beba com calma.</strong> Esses 3 minutos viram uma pausa sua no meio do caos — e o lembrete diário de que você está cuidando de você.</li>
+    </ol>
+    <p><strong>"Mas chá detox tem gosto ruim, né?"</strong> Essa era a maior desconfiança da Ana — e a resposta surpreendeu. O azedinho natural do hibisco com o toque levemente picante do gengibre dá um sabor vivo, nada parecido com aqueles chás de "capim amargo". No verão, a dica das clientes é preparar, gelar e beber como iced tea. Muita gente substitui o refrigerante da tarde assim.</p>
+    <p>E vale repetir, porque honestidade aqui é regra: <strong>o SlimTea não substitui alimentação equilibrada nem movimento.</strong> Ele acompanha. É o aliado que torna a rotina saudável mais fácil de sustentar — e é justamente por não prometer milagre que ele funciona como ritual de longo prazo.</p>
+
+    <hr class="divider">
+
+    <!-- Prova social -->
+    <h2>O que dizem as clientes</h2>
+    <div class="social-banner">+12.000 clientes atendidas desde 2022 &middot; Nota 4,8/5 em mais de 900 avaliações no site</div>
+
+    <div class="img-placeholder" role="img" aria-label="Espaço reservado para mosaico de fotos de clientes">
+      Mosaico de fotos reais de clientes com suas canecas/kits, estilo galeria de avaliações
+    </div>
+
+    <div class="testimonial">
+      <div class="who">Márcia, 47, Belo Horizonte/MG <span class="stars" aria-label="5 de 5 estrelas">★★★★★</span></div>
+      <p>"Eu era A cética de chá. Já tinha jogado dinheiro fora com uns três 'detox milagrosos'. O SlimTea foi o primeiro que se apresentou como apoio, não como mágica — e por isso mesmo eu mantive. Faz 5 meses que tomo todo dia e a minha constância na alimentação nunca durou tanto." <mark class="validar">[VALIDAR: substituir por prova real antes de publicar]</mark></p>
+    </div>
+    <div class="testimonial">
+      <div class="who">Patrícia, 38, São Paulo/SP <span class="stars" aria-label="5 de 5 estrelas">★★★★★</span></div>
+      <p>"Comprei com medo do gosto e virou meu momento favorito da tarde. O azedinho do hibisco com o gengibre é uma delícia — gelado então, nem se fala. Troquei o refrigerante das 16h por ele." <mark class="validar">[VALIDAR: substituir por prova real antes de publicar]</mark></p>
+    </div>
+    <div class="testimonial">
+      <div class="who">Renata, 52, Curitiba/PR <span class="stars" aria-label="5 de 5 estrelas">★★★★★</span></div>
+      <p>"O que me conquistou foi a praticidade. Sachê na bolsa, água quente no trabalho, pronto. Sem preparo, sem desculpa. Me sinto mais leve e com mais disposição para manter o resto da rotina." <mark class="validar">[VALIDAR: substituir por prova real antes de publicar]</mark></p>
+    </div>
+    <div class="testimonial">
+      <div class="who">Cláudia, 44, Recife/PE <span class="stars" aria-label="5 de 5 estrelas">★★★★★</span></div>
+      <p>"Fiz a conta: dá menos que um cafezinho por dia. Pelo que ele representa na minha rotina — a pausa, a leveza, a sensação de estar me cuidando — é o dinheiro mais bem gasto do meu mês." <mark class="validar">[VALIDAR: substituir por prova real antes de publicar]</mark></p>
+    </div>
+
+    <hr class="divider">
+
+    <!-- A oferta -->
+    <h2 id="oferta">A oferta — Kit 3 meses</h2>
+    <p>Por que o kit é de 3 meses? Porque é o tempo que a ciência do comportamento aponta para um ritual virar hábito de verdade — cerca de 90 dias de repetição. <mark class="validar">[VALIDAR: substituir por prova real antes de publicar]</mark> Um pote de 15 dias não constrói hábito nenhum; 90 dias de ritual, sim.</p>
+
+    <section class="offer-box" aria-label="Oferta do Kit SlimTea Detox de 3 meses">
+      <h3>Kit SlimTea Detox — 3 meses de ritual</h3>
+      <p class="price-line"><span class="price-old">De R$ 297</span> por <span class="price-new">R$ 197</span> à vista</p>
+      <ul class="offer-list">
+        <li>✅ <strong>Frete grátis</strong> para todo o Brasil</li>
+        <li>✅ Sachês individuais para 90 dias</li>
+        <li>✅ 100% natural &middot; Aprovado pela ANVISA como alimento</li>
+        <li>✅ Garantia incondicional de 30 dias</li>
+      </ul>
+      <p class="offer-note"><strong>Isso dá cerca de R$ 2,19 por dia.</strong> Menos que um cafezinho de padaria — pelo ritual que segura a sua rotina saudável em pé.</p>
+      <p class="offer-seal">Selo: +12.000 clientes desde 2022 &middot; 4,8/5 em 900+ avaliações</p>
+    </section>
+
+    <!-- CTA nº 2 — botão principal -->
+    <a class="cta-btn" href="https://exemplo.com/checkout/slimtea" aria-label="Quero começar meu ritual com desconto — ir para o checkout">QUERO COMEÇAR MEU RITUAL COM DESCONTO →</a>
+
+    <hr class="divider">
+
+    <!-- Garantia -->
+    <h2>Garantia e reversão de risco</h2>
+    <div class="guarantee">
+      <p>Aqui não tem letra miúda: <strong>você tem 30 dias para experimentar o SlimTea Detox com garantia incondicional.</strong></p>
+      <p>Prepare seu chá, viva o ritual, sinta o sabor. Se por qualquer motivo você não amar — o gosto, a experiência, qualquer coisa — basta um e-mail e devolvemos 100% do seu dinheiro. Sem perguntas, sem burocracia, sem constrangimento.</p>
+      <p>E você experimenta com tranquilidade: fórmula <strong>100% natural</strong>, produto <strong>aprovado pela ANVISA como alimento</strong>, produzido no Brasil com controle de qualidade.</p>
+      <p style="margin-bottom:0">Ou seja: o único cenário em que você perde é o de nunca ter tentado.</p>
+    </div>
+
+    <!-- CTA nº 3 — botão -->
+    <a class="cta-btn" href="https://exemplo.com/checkout/slimtea" aria-label="Quero experimentar sem risco por 30 dias — ir para o checkout">QUERO EXPERIMENTAR SEM RISCO POR 30 DIAS →</a>
+
+    <hr class="divider">
+
+    <!-- FAQ -->
+    <h2>Perguntas frequentes</h2>
+
+    <details class="faq-item">
+      <summary>O SlimTea emagrece sozinho, sem dieta?</summary>
+      <p>Não — e desconfie de qualquer produto que prometa isso. O SlimTea é um alimento funcional pensado para <strong>apoiar</strong> uma rotina de emagrecimento saudável: ele é o ritual diário que ajuda na constância, na sensação de leveza e na disposição. Os resultados vêm do conjunto: alimentação equilibrada, movimento e constância.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>E o gosto? Chá detox costuma ser horrível...</summary>
+      <p>O SlimTea tem o azedinho refrescante do hibisco com um toque picante de gengibre — um sabor vivo que a maioria das clientes adora (nota 4,8/5 em 900+ avaliações). E se você não gostar, a garantia de 30 dias cobre até isso.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Quantos sachês vêm no kit? Como eu tomo?</summary>
+      <p>O kit de 3 meses traz sachês individuais para o uso diário durante 90 dias. É só colocar 1 sachê em água quente, esperar 3 minutos e beber — quente ou gelado, no horário que preferir.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Tem contraindicação?</summary>
+      <p>Por conter chá verde e gengibre, gestantes, lactantes, pessoas com condições de saúde específicas ou em uso de medicamentos contínuos devem consultar um profissional de saúde antes de usar.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Como funciona a garantia?</summary>
+      <p>30 dias incondicionais a partir do recebimento. Não amou? E-mail para nossa equipe e devolvemos todo o valor pago.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Como é a entrega?</summary>
+      <p>Frete grátis para todo o Brasil, com código de rastreio enviado por e-mail. O prazo varia conforme a região e aparece no checkout.</p>
+    </details>
+
+    <!-- Fechamento editorial -->
+    <h2>O final da história da Ana (e talvez o começo da sua)</h2>
+    <p>Hoje, oito meses depois daquele primeiro sachê, a Ana não vive mais de segunda-feira em segunda-feira. A gaveta dos métodos abandonados virou gaveta de sachês. O ritual de 3 minutos continua lá, todo dia — e em volta dele, quase sem perceber, ela foi construindo o resto: comer melhor, caminhar mais, dormir mais cedo, sentir-se mais leve.</p>
+    <p>"Eu passei anos procurando a dieta perfeita", ela diz. "O que eu precisava era de um começo pequeno que coubesse na minha vida."</p>
+    <p>Se a história dela parece a sua, o próximo passo custa menos que um cafezinho por dia — e vem com 30 dias para você se arrepender sem perder nada.</p>
+
+    <div class="final-price">Kit 3 meses: de <span class="price-old">R$ 297</span> por R$ 197 &middot; Frete grátis &middot; Garantia de 30 dias</div>
+
+    <!-- CTA nº 4 — botão final -->
+    <a class="cta-btn" href="https://exemplo.com/checkout/slimtea" aria-label="Quero o kit com desconto e frete grátis — ir para o checkout">QUERO O KIT COM DESCONTO E FRETE GRÁTIS →</a>
+
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Este conteúdo é um publieditorial. SlimTea Detox é um alimento registrado conforme normas da ANVISA e não é medicamento. Este produto não substitui alimentação equilibrada e hábitos saudáveis. Resultados variam de pessoa para pessoa.</p>
+  </div>
+</footer>
+
+<!-- Barra fixa inferior (mobile) — aparece a partir da seção da oferta -->
+<nav class="sticky-cta" id="stickyCta" aria-label="Barra de compra rápida" aria-hidden="true">
+  <div class="price-info">
+    <span class="old">De R$ 297</span>
+    <span class="now">R$ 197</span>
+  </div>
+  <a class="btn" href="https://exemplo.com/checkout/slimtea" aria-label="Quero meu kit com frete grátis — ir para o checkout">QUERO MEU KIT →</a>
+</nav>
+
+<script>
+(function () {
+  var sticky = document.getElementById('stickyCta');
+  var offer = document.getElementById('oferta');
+  if (!sticky || !offer) return;
+
+  function setVisible(v) {
+    sticky.classList.toggle('visible', v);
+    sticky.setAttribute('aria-hidden', v ? 'false' : 'true');
+  }
+
+  if ('IntersectionObserver' in window) {
+    var passedOffer = false;
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting || entry.boundingClientRect.top < 0) {
+          passedOffer = true;
+        }
+        if (entry.boundingClientRect.top > window.innerHeight) {
+          passedOffer = false;
+        }
+        setVisible(passedOffer);
+      });
+    }, { rootMargin: '0px 0px -20% 0px' });
+    observer.observe(offer);
+  } else {
+    // Fallback: mostra a barra quando o scroll passa da seção da oferta
+    window.addEventListener('scroll', function () {
+      var rect = offer.getBoundingClientRect();
+      setVisible(rect.top < window.innerHeight * 0.8);
+    }, { passive: true });
+  }
+})();
+</script>
+
+</body>
+</html>
