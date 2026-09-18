@@ -38,7 +38,11 @@ def run_pipeline(brief: Brief, output_dir: str | Path, revisar: bool = True) -> 
     plano = estrategista.run(estrategista.build_input(brief_text, brief.tipo_pagina))
 
     copywriter = Copywriter(client)
-    copy_final = copywriter.run(copywriter.build_input(brief_text, plano))
+    copy_raw = copywriter.run(copywriter.build_input(brief_text, plano))
+    # A lista pós ---VALIDACAO--- vai para o setor de validação; nunca entra na página.
+    copy_final, _, validacao = copy_raw.partition("---VALIDACAO---")
+    copy_final = copy_final.strip()
+    validacao = validacao.strip()
 
     designer = Designer(client)
     html = _extract_html(designer.run(designer.build_input(brief_text, copy_final)))
@@ -53,6 +57,8 @@ def run_pipeline(brief: Brief, output_dir: str | Path, revisar: bool = True) -> 
     base = f"{slug}-{brief.tipo_pagina}"
     (out / f"{base}-plano.md").write_text(plano, encoding="utf-8")
     (out / f"{base}-copy.md").write_text(copy_final, encoding="utf-8")
+    if validacao:
+        (out / f"{base}-validacao.md").write_text(validacao + "\n", encoding="utf-8")
     html_path = out / f"{base}.html"
     html_path.write_text(html, encoding="utf-8")
 

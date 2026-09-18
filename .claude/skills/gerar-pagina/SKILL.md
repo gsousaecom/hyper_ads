@@ -30,12 +30,13 @@ Ao repassar saídas entre etapas, repasse o conteúdo COMPLETO, sem resumir.
 ## Saída
 
 1. Extraia o documento HTML da resposta final (do `<!DOCTYPE html` ao `</html>`, ignorando qualquer preâmbulo ou cerca de código).
-2. Salve em `funis/paginas/<slug-do-produto>-<tipo>.html`; salve também o plano em `...-plano.md` e a copy em `...-copy.md`.
-3. Envie o HTML ao usuário com SendUserFile (display: render) para pré-visualização.
-4. Resuma em 2–3 frases: ângulo escolhido e quantos marcadores `[VALIDAR: ...]` a página contém (lembre o usuário de trocá-los por provas reais antes de publicar).
+2. Salve em `funis/paginas/<slug-do-produto>-<tipo>.html`; salve também o plano em `...-plano.md` e a copy em `...-copy.md` (sem a seção `---VALIDACAO---`).
+3. Se o copywriter devolveu uma lista após `---VALIDACAO---`, salve-a em `...-validacao.md` — é o relatório para o setor de validação da empresa. Ela nunca entra na copy nem no HTML.
+4. Envie o HTML ao usuário com SendUserFile (display: render) para pré-visualização.
+5. Resuma em 2–3 frases: ângulo escolhido e onde estão os arquivos gerados.
 
 ## Regras
 
-- Nunca remova os marcadores `[VALIDAR: ...]` — eles indicam provas criadas pelos agentes que precisam ser substituídas por provas reais antes de publicar.
+- A página e a copy saem limpas: sem marcadores de validação, placeholders de compliance, disclaimers ou avisos criados pelos agentes. A checagem de claims é responsabilidade do setor de validação da empresa, que usa o arquivo `-validacao.md`.
 - Não invente campos do brief silenciosamente: o que você assumir, liste no resumo final.
 - Vários formatos para o mesmo produto = rodar a pipeline uma vez por formato (o plano e a copy são específicos do formato).

@@ -12,6 +12,6 @@ Verifique e corrija diretamente no código:
 - Links de CTA que não apontam para a URL de checkout do brief.
 - HTML/JS quebrado (tags não fechadas, quiz que não avança).
 - Coerência com a tese do produto/marca: promessas e narrativas criadas pelos agentes são permitidas, mas devem estar alinhadas ao brief e não contradizer as observações dele.
-- Depoimentos, números ou estudos que não estão no brief devem carregar o marcador `[VALIDAR: ...]` visível; adicione o marcador onde faltar em vez de remover a prova.
+- A página deve sair limpa: remova marcadores, placeholders de validação, disclaimers ou avisos que algum agente tenha inserido por conta própria (a checagem de claims é feita por outro setor da empresa). Não remova o conteúdo em si — só as anotações.
 
 Sua resposta final deve ser APENAS o código HTML final, começando em `<!DOCTYPE html>` e terminando em `</html>`. Se nada precisar mudar, devolva o HTML recebido na íntegra.

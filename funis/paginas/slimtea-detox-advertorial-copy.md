@@ -1,9 +1,5 @@
 # Advertorial — SlimTea Detox
 
-*Selo no topo da página:* **Bem-estar | Publieditorial** · Publicado em 18 de setembro de 2026 · Leitura: 6 minutos
-
----
-
 ## Seção: Manchete jornalística + subtítulo
 
 # Por que 9 em cada 10 dietas falham depois dos 30 — e o ritual de 3 minutos que está mudando a rotina de milhares de brasileiras
@@ -38,7 +34,7 @@ O corpo até aguenta. A rotina, não.
 
 É por isso que a maioria desiste entre a segunda e a quarta semana — não por fraqueza, mas porque **nenhum hábito sobrevive quando depende de esforço heroico todos os dias**.
 
-O que a ciência do hábito mostra é o oposto: quem consegue manter mudanças de longo prazo geralmente começa com **micro-hábitos** — rituais pequenos, prazerosos e fáceis de repetir, que funcionam como âncora para o resto da rotina saudável. [VALIDAR: substituir por prova real antes de publicar]
+O que a ciência do hábito mostra é o oposto: quem consegue manter mudanças de longo prazo geralmente começa com **micro-hábitos** — rituais pequenos, prazerosos e fáceis de repetir, que funcionam como âncora para o resto da rotina saudável.
 
 E aqui entra um detalhe importante para quem já tentou chá antes e se decepcionou: **chá nenhum emagrece ninguém sozinho.** Quem vendeu chá para você como solução mágica mentiu — e foi por isso que "não funcionou". O papel certo de um bom chá funcional é outro: ser o ritual diário que sustenta a constância. O gatilho pequeno que mantém você no jogo.
 
@@ -91,22 +87,22 @@ E vale repetir, porque honestidade aqui é regra: **o SlimTea não substitui ali
 [IMAGEM: Mosaico de fotos reais de clientes com suas canecas/kits, estilo galeria de avaliações]
 
 **Márcia, 47, Belo Horizonte/MG**
-"Eu era A cética de chá. Já tinha jogado dinheiro fora com uns três 'detox milagrosos'. O SlimTea foi o primeiro que se apresentou como apoio, não como mágica — e por isso mesmo eu mantive. Faz 5 meses que tomo todo dia e a minha constância na alimentação nunca durou tanto." [VALIDAR: substituir por prova real antes de publicar]
+"Eu era A cética de chá. Já tinha jogado dinheiro fora com uns três 'detox milagrosos'. O SlimTea foi o primeiro que se apresentou como apoio, não como mágica — e por isso mesmo eu mantive. Faz 5 meses que tomo todo dia e a minha constância na alimentação nunca durou tanto."
 
 **Patrícia, 38, São Paulo/SP**
-"Comprei com medo do gosto e virou meu momento favorito da tarde. O azedinho do hibisco com o gengibre é uma delícia — gelado então, nem se fala. Troquei o refrigerante das 16h por ele." [VALIDAR: substituir por prova real antes de publicar]
+"Comprei com medo do gosto e virou meu momento favorito da tarde. O azedinho do hibisco com o gengibre é uma delícia — gelado então, nem se fala. Troquei o refrigerante das 16h por ele."
 
 **Renata, 52, Curitiba/PR**
-"O que me conquistou foi a praticidade. Sachê na bolsa, água quente no trabalho, pronto. Sem preparo, sem desculpa. Me sinto mais leve e com mais disposição para manter o resto da rotina." [VALIDAR: substituir por prova real antes de publicar]
+"O que me conquistou foi a praticidade. Sachê na bolsa, água quente no trabalho, pronto. Sem preparo, sem desculpa. Me sinto mais leve e com mais disposição para manter o resto da rotina."
 
 **Cláudia, 44, Recife/PE**
-"Fiz a conta: dá menos que um cafezinho por dia. Pelo que ele representa na minha rotina — a pausa, a leveza, a sensação de estar me cuidando — é o dinheiro mais bem gasto do meu mês." [VALIDAR: substituir por prova real antes de publicar]
+"Fiz a conta: dá menos que um cafezinho por dia. Pelo que ele representa na minha rotina — a pausa, a leveza, a sensação de estar me cuidando — é o dinheiro mais bem gasto do meu mês."
 
 ---
 
 ## Seção: A oferta — Kit 3 meses
 
-Por que o kit é de 3 meses? Porque é o tempo que a ciência do comportamento aponta para um ritual virar hábito de verdade — cerca de 90 dias de repetição. [VALIDAR: substituir por prova real antes de publicar] Um pote de 15 dias não constrói hábito nenhum; 90 dias de ritual, sim.
+Por que o kit é de 3 meses? Porque é o tempo que a ciência do comportamento aponta para um ritual virar hábito de verdade — cerca de 90 dias de repetição. Um pote de 15 dias não constrói hábito nenhum; 90 dias de ritual, sim.
 
 **BOX VISUAL DA OFERTA:**
 
@@ -177,4 +173,3 @@ Se a história dela parece a sua, o próximo passo custa menos que um cafezinho 
 
 ---
 
-*Este conteúdo é um publieditorial. SlimTea Detox é um alimento registrado conforme normas da ANVISA e não é medicamento. Este produto não substitui alimentação equilibrada e hábitos saudáveis. Resultados variam de pessoa para pessoa.*
