@@ -51,7 +51,7 @@ Saída em `output/`: o HTML final da página, o plano estratégico e a copy em m
 
 Copie `examples/brief_exemplo.json` e preencha com seu produto. Campos: `produto`, `descricao`, `publico_alvo`, `oferta`, `tipo_pagina` (`advertorial` | `listicle` | `quiz` | `pdp` | `presell`), `idioma`, `tom`, `diferenciais`, `objecoes`, `provas_sociais`, `url_checkout`, `observacoes`.
 
-Os agentes **não inventam** depoimentos, números ou promessas — só usam o que está no brief. Quanto melhor o brief, melhor a página.
+Os agentes têm liberdade criativa para promessas, ângulos e narrativas alinhadas à tese do produto/marca. Depoimentos, números e estudos que eles criarem (além dos do brief) entram na página marcados com `[VALIDAR: ...]` e destacados no HTML — troque-os por provas reais antes de publicar. Quanto melhor o brief, melhor a página.
 
 ## Uso como biblioteca
 
