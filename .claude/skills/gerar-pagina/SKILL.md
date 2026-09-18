@@ -1,42 +1,49 @@
 ---
 name: gerar-pagina
-description: Gera uma página de funil completa (advertorial, listicle, quiz, PDP ou presell) orquestrando os subagentes funil-estrategista, funil-copywriter, funil-web-designer e funil-revisor. Use quando o usuário pedir para gerar/criar uma página de funil, advertorial, listicle, quiz, PDP ou presell para um produto.
+description: Gera páginas de conversão completas (PDP, advertorial, listicle, long-form, VSL page, landing, upsell/downsell, quiz, presell) orquestrando os subagentes funil-estrategista, funil-copywriter, funil-web-designer e funil-revisor segundo a metodologia da casa (references/). Use quando o usuário pedir página, copy, arquitetura, HTML ou variação A/B de página de funil.
 ---
 
 # Gerar página de funil
 
-Você é o orquestrador de uma pipeline de 4 agentes que transforma um brief de produto em uma página de funil pronta (HTML único, mobile-first).
+Você é o orquestrador da pipeline COPYWRITER & PAGE BUILDER. A metodologia completa vive em `references/` (nesta pasta): Master Instructions (01), Persuasion Engine (02), Page Type Router (03), Section Library (04), Copy Router (05), Playbooks (06), Design System (07), HTML Standards (08), Copy QC (09), Reference-First (10), Intake & Commands (11). North Star: **THESIS + READER STATE + PAGE JOB + PRODUCT REALITY + PAGE TYPE + REFERENCES**.
 
-## Entrada
+## Intake
 
-O usuário fornece um brief de uma destas formas:
+Input ideal (comece com o que existir; não force interrogatório): PAGE REQUEST, Marketing Thesis, One Belief, Avatar/Research, Copy Truth (claims, preço, oferta, garantia, provas fornecidas), Offer, Brand/Visual Identity, Market/Language, Target platform (standalone | Shopify/snippet). Pergunte apenas o que muda fundamentalmente a estratégia; decisões de ofício são suas. Salve briefs recebidos em `funis/briefs/<slug>.json` ou `.md`.
 
-1. Caminho de um JSON em `funis/briefs/` (formato do `funis/briefs/brief_exemplo.json`);
-2. Descrição livre no chat — nesse caso, monte o brief você mesmo com os campos: produto, descricao, publico_alvo, oferta, tipo_pagina (advertorial | listicle | quiz | pdp | presell), idioma, tom, diferenciais, objecoes, provas_sociais, url_checkout, observacoes. Se faltar algo essencial (produto, oferta ou tipo de página), pergunte antes de começar. Salve o brief montado em `funis/briefs/<slug>.json`.
+## Escopos (comandos do arquivo 11)
 
-Serialize o brief em texto legível (campo: valor, um por linha) — chamado de BRIEF abaixo.
+O usuário pode pedir o workflow completo ou só uma parte. Execute o escopo pedido; não force onboarding nem aprovação intermediária:
+
+- **/page (padrão)** — pipeline completa: estrategista → copywriter → web designer → revisor.
+- **/architecture** — só o funil-estrategista (routing, belief gaps, arquitetura de seções).
+- **/copy** — copywriter usando arquitetura existente (ou crie a mínima via estrategista antes). Sem HTML.
+- **/html** — copy/arquitetura já fornecidas ou aprovadas → direto ao web designer (+ revisor). Não obrigue nova aprovação.
+- **/pdp, /advertorial, /longform, /listicle** — pipeline completa com o Page Type já roteado (o estrategista escolhe o subtype pelo Playbook).
+- **/redteam** — spawne o funil-revisor em modo ataque: Page Type Integrity, belief gaps, genericness, sequencing, offer clarity, visual logic, conversion friction. Sem editar; devolve relatório.
+- **/ab** — variação com hipótese explícita de uma página existente; mude poucas variáveis e declare-as.
 
 ## Pipeline (sequencial — cada etapa depende da anterior)
 
-Execute cada etapa com o tool Agent, usando o subagente nomeado. Se um subagente não estiver registrado nesta sessão (agentes recém-criados exigem reinício), leia o arquivo `.claude/agents/<nome>.md` correspondente e spawne um agente `general-purpose` passando o corpo do arquivo como instrução, mais a entrada da etapa.
+Use o tool Agent com os subagentes nomeados (`funil-estrategista`, `funil-copywriter`, `funil-web-designer`, `funil-revisor`). Se um subagente não estiver registrado na sessão, leia o `.claude/agents/<nome>.md` e spawne um agente `general-purpose` com o corpo como instrução. Ao repassar saídas entre etapas, repasse o conteúdo COMPLETO, sem resumir — ou salve em arquivo e passe o caminho (preferível para textos longos).
 
-1. **funil-estrategista** — entrada: BRIEF + tipo de página. Saída: PLANO (markdown).
-2. **funil-copywriter** — entrada: BRIEF + PLANO. Saída: COPY (markdown).
-3. **funil-web-designer** — entrada: BRIEF + COPY. Saída: HTML.
-4. **funil-revisor** — entrada: BRIEF + COPY + HTML. Saída: HTML final. (Pule esta etapa se o usuário pedir rapidez com "sem revisão".)
-
-Ao repassar saídas entre etapas, repasse o conteúdo COMPLETO, sem resumir.
+1. **funil-estrategista** — entrada: brief/thesis/Copy Truth + page request. Saída: routing + reader state + belief gap map + section architecture.
+2. **funil-copywriter** — entrada: brief + arquitetura. Saída: copy final + seção `---VALIDACAO---`.
+3. **funil-web-designer** — entrada: brief (com plataforma-alvo e URL de checkout se houver) + copy final (sem a seção de validação) + tratamento visual da arquitetura. Saída: HTML.
+4. **funil-revisor** — entrada: brief + copy aprovada + HTML. Saída: HTML final. (Pule se o usuário pedir "sem revisão".)
 
 ## Saída
 
-1. Extraia o documento HTML da resposta final (do `<!DOCTYPE html` ao `</html>`, ignorando qualquer preâmbulo ou cerca de código).
-2. Salve em `funis/paginas/<slug-do-produto>-<tipo>.html`; salve também o plano em `...-plano.md` e a copy em `...-copy.md` (sem a seção `---VALIDACAO---`).
-3. Se o copywriter devolveu uma lista após `---VALIDACAO---`, salve-a em `...-validacao.md` — é o relatório para o setor de validação da empresa. Ela nunca entra na copy nem no HTML.
-4. Envie o HTML ao usuário com SendUserFile (display: render) para pré-visualização.
-5. Resuma em 2–3 frases: ângulo escolhido e onde estão os arquivos gerados.
+1. Extraia o documento HTML (do `<!DOCTYPE html` ao `</html>`, ignorando preâmbulo/cercas) — ou o snippet, quando a plataforma-alvo for Shopify/page builder.
+2. Salve em `funis/paginas/<slug>-<tipo>.html`, com `...-arquitetura.md` (saída do estrategista) e `...-copy.md` (sem a seção de validação).
+3. Se houver lista após `---VALIDACAO---`, salve em `...-validacao.md` — relatório para o setor de validação da empresa. Nunca entra na copy nem no HTML.
+4. Envie o HTML ao usuário com SendUserFile (display: render).
+5. Resuma em 2–3 frases: Page Type/subtype roteado, ângulo/One Belief e onde estão os arquivos.
 
 ## Regras
 
-- A página e a copy saem limpas: sem marcadores de validação, placeholders de compliance, disclaimers ou avisos criados pelos agentes. A checagem de claims é responsabilidade do setor de validação da empresa, que usa o arquivo `-validacao.md`.
-- Não invente campos do brief silenciosamente: o que você assumir, liste no resumo final.
-- Vários formatos para o mesmo produto = rodar a pipeline uma vez por formato (o plano e a copy são específicos do formato).
+- A página e a copy saem limpas: sem marcadores de validação, disclaimers ou avisos criados pelos agentes. Placeholders técnicos de asset (`[PRODUCT_IMAGE_01]`, `[UGC_VIDEO_01]`, `[CHECKOUT_URL]`...) são intencionais e ficam até o dono substituir.
+- Page Type = gramática; Belief Gaps = seções; References = repertório; Copy Truth = limites factuais; Thesis/One Belief = direção persuasiva; HTML = implementação final.
+- O que você assumir de ofício, liste no resumo final.
+- Vários formatos para o mesmo produto = uma pipeline por formato.
+- Quando existir `references/00_VISUAL_REFERENCE_INDEX.md` (Visual Reference Library), o web designer aplica o Reference-First Protocol; sem ele, constrói pela gramática do Page Type.
