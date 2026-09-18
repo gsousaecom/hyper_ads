@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Por que você ainda está roncando em 2025 — e o que a ciência diz que você pode fazer a respeito</title>
+<meta name="description" content="Se você ainda ronca mesmo depois de tentar de tudo, conheça a verdadeira ciência do ronco e a tecnologia inovadora que pode acabar com o seu ronco hoje mesmo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1a2230;
+  --ink-soft:#3d4a5c;
+  --muted:#6b7787;
+  --paper:#ffffff;
+  --bg:#f4f6f8;
+  --line:#e3e8ee;
+  --brand:#0e5aa7;
+  --brand-dark:#0a4076;
+  --accent:#0e8a5f;
+  --cta:#e8590c;
+  --cta-dark:#c94a08;
+  --star:#f5a623;
+  --warn-bg:#fff3bf;
+  --warn-ink:#5c4a00;
+  --danger:#c92a2a;
+  --serif:'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  font-family:var(--serif);
+  font-size:1.125rem;
+  line-height:1.7;
+  color:var(--ink);
+  background:var(--bg);
+}
+img{max-width:100%;height:auto}
+
+/* ===== Barra de topo estilo portal ===== */
+.topbar{
+  background:#101822;
+  color:#fff;
+  font-family:var(--sans);
+  font-size:.75rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  text-align:center;
+  padding:.45rem 1rem;
+}
+.masthead{
+  background:var(--paper);
+  border-bottom:3px solid var(--ink);
+  padding:1rem;
+  text-align:center;
+}
+.masthead .portal-name{
+  font-family:var(--sans);
+  font-weight:800;
+  font-size:1.5rem;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ink);
+}
+.masthead .portal-tag{
+  font-family:var(--sans);
+  font-size:.72rem;
+  color:var(--muted);
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  margin-top:.25rem;
+}
+.crumbs{
+  background:var(--paper);
+  border-bottom:1px solid var(--line);
+  font-family:var(--sans);
+  font-size:.78rem;
+  color:var(--muted);
+  padding:.5rem 1rem;
+  text-align:center;
+}
+.crumbs strong{color:var(--brand)}
+
+/* ===== Conteúdo ===== */
+.wrap{
+  max-width:720px;
+  margin:0 auto;
+  background:var(--paper);
+  padding:1.75rem 1rem 3rem;
+}
+@media(min-width:760px){
+  .wrap{padding:2.5rem 3rem 4rem;box-shadow:0 0 30px rgba(20,30,45,.06)}
+}
+
+.kicker{
+  font-family:var(--sans);
+  font-weight:700;
+  font-size:.75rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--brand);
+  margin-bottom:.75rem;
+}
+h1{
+  font-family:var(--serif);
+  font-weight:700;
+  font-size:clamp(1.7rem, 5.4vw, 2.5rem);
+  line-height:1.2;
+  margin-bottom:1rem;
+}
+.deck{
+  font-size:1.15rem;
+  color:var(--ink-soft);
+  margin-bottom:1.25rem;
+}
+.rating-row{
+  font-family:var(--sans);
+  font-size:.95rem;
+  color:var(--ink-soft);
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.5rem;
+  margin-bottom:.75rem;
+}
+.stars{color:var(--star);letter-spacing:.1em;font-size:1.05rem}
+.byline{
+  font-family:var(--sans);
+  font-size:.9rem;
+  color:var(--muted);
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  padding:.7rem 0;
+  margin:1rem 0 1.5rem;
+}
+.byline strong{color:var(--ink)}
+
+h2{
+  font-family:var(--serif);
+  font-weight:700;
+  font-size:clamp(1.35rem, 4.4vw, 1.75rem);
+  line-height:1.3;
+  margin:2.5rem 0 1rem;
+}
+h3{
+  font-family:var(--sans);
+  font-weight:700;
+  font-size:1.1rem;
+  margin:1.75rem 0 .75rem;
+}
+p{margin-bottom:1.1rem}
+strong{font-weight:700}
+em{font-style:italic}
+
+ul.bullets, ol.steps-list{
+  margin:0 0 1.25rem 1.4rem;
+}
+ul.bullets li, ol.steps-list li{margin-bottom:.55rem}
+
+.pull{
+  border-left:4px solid var(--brand);
+  background:#eef4fb;
+  padding:1rem 1.15rem;
+  margin:1.5rem 0;
+  font-size:1.15rem;
+  font-weight:600;
+}
+.pull.alert{border-color:var(--danger);background:#fdf0f0}
+
+/* Marcador de validação */
+mark.validar{
+  display:inline-block;
+  background:var(--warn-bg);
+  color:var(--warn-ink);
+  font-family:var(--sans);
+  font-size:.72rem;
+  font-weight:700;
+  line-height:1.35;
+  padding:.15rem .45rem;
+  border:1px dashed #d9b60a;
+  border-radius:4px;
+  margin:.15rem 0 .15rem .3rem;
+  vertical-align:middle;
+}
+
+/* Placeholder de imagem */
+.img-placeholder{
+  background:repeating-linear-gradient(45deg,#eef1f5,#eef1f5 12px,#e4e9ef 12px,#e4e9ef 24px);
+  border:2px dashed #b7c2cf;
+  border-radius:8px;
+  min-height:220px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-family:var(--sans);
+  font-size:.9rem;
+  font-weight:600;
+  color:#5a6a7d;
+  padding:1.5rem;
+  margin:1.5rem 0;
+}
+.img-placeholder small{
+  display:block;
+  font-weight:400;
+  margin-top:.35rem;
+  color:#7c8a9b;
+}
+.caption{
+  font-family:var(--sans);
+  font-size:.8rem;
+  color:var(--muted);
+  text-align:center;
+  margin-top:-1rem;
+  margin-bottom:1.5rem;
+}
+
+/* Lista de checagens */
+ul.checks{list-style:none;margin:0 0 1.25rem}
+ul.checks li{
+  position:relative;
+  padding-left:1.9rem;
+  margin-bottom:.6rem;
+}
+ul.checks li::before{
+  content:"✓";
+  position:absolute;
+  left:0;
+  top:.05rem;
+  width:1.3rem;height:1.3rem;
+  border-radius:50%;
+  background:var(--accent);
+  color:#fff;
+  font-size:.85rem;
+  font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--sans);
+}
+ul.crosses{list-style:none;margin:0 0 1.25rem}
+ul.crosses li{
+  position:relative;
+  padding-left:1.9rem;
+  margin-bottom:.6rem;
+}
+ul.crosses li::before{
+  content:"✕";
+  position:absolute;
+  left:0;
+  top:.05rem;
+  width:1.3rem;height:1.3rem;
+  border-radius:50%;
+  background:#e9ecef;
+  color:var(--danger);
+  font-size:.8rem;
+  font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--sans);
+}
+
+/* Passos numerados */
+.steps{margin:1.25rem 0 1.5rem}
+.step{
+  display:flex;
+  gap:.9rem;
+  margin-bottom:.9rem;
+  align-items:flex-start;
+}
+.step .n{
+  flex:0 0 2rem;
+  width:2rem;height:2rem;
+  border-radius:50%;
+  background:var(--brand);
+  color:#fff;
+  font-family:var(--sans);
+  font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.step p{margin:0;padding-top:.2rem}
+
+/* Fatos rápidos / caixa cinza */
+.factbox{
+  background:#f6f8fa;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:1.15rem 1.25rem;
+  margin:1.5rem 0;
+}
+.factbox h3{margin-top:0}
+.factbox ul{margin-bottom:0}
+
+/* Tabela comparativa */
+.table-scroll{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  margin:1.5rem 0;
+  border:1px solid var(--line);
+  border-radius:8px;
+}
+table.compare{
+  border-collapse:collapse;
+  width:100%;
+  min-width:600px;
+  font-family:var(--sans);
+  font-size:.88rem;
+}
+table.compare caption{
+  caption-side:top;
+  text-align:left;
+  font-weight:700;
+  padding:.85rem 1rem;
+  background:#f6f8fa;
+  border-bottom:1px solid var(--line);
+  font-size:.9rem;
+}
+table.compare th, table.compare td{
+  padding:.7rem .8rem;
+  border-bottom:1px solid var(--line);
+  text-align:center;
+  vertical-align:middle;
+}
+table.compare thead th{
+  background:var(--ink);
+  color:#fff;
+  font-size:.8rem;
+  letter-spacing:.03em;
+  text-transform:uppercase;
+}
+table.compare th[scope="row"], table.compare td:first-child{
+  text-align:left;
+  font-weight:600;
+  background:#fbfcfd;
+}
+table.compare td.win{
+  background:#e7f6ef;
+  color:#0a6b47;
+  font-weight:700;
+}
+table.compare .yes{color:var(--accent);font-weight:700}
+table.compare .no{color:var(--danger);font-weight:700}
+.table-hint{
+  font-family:var(--sans);
+  font-size:.75rem;
+  color:var(--muted);
+  text-align:center;
+  margin:-1rem 0 1.5rem;
+}
+@media(min-width:700px){.table-hint{display:none}}
+
+/* Depoimentos */
+.testimonial{
+  background:#fbfcfd;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:1.25rem;
+  margin:1.25rem 0;
+}
+.testimonial .t-title{
+  font-family:var(--sans);
+  font-weight:700;
+  font-size:1rem;
+  margin-bottom:.5rem;
+}
+.testimonial .stars{display:block;margin-bottom:.5rem}
+.testimonial p{margin-bottom:.6rem}
+.testimonial .t-author{
+  font-family:var(--sans);
+  font-size:.85rem;
+  color:var(--muted);
+  font-weight:600;
+}
+
+/* Box de oferta */
+.offer-box{
+  border:2px solid var(--brand);
+  border-radius:12px;
+  overflow:hidden;
+  margin:2rem 0;
+  font-family:var(--sans);
+}
+.offer-box .offer-head{
+  background:var(--brand);
+  color:#fff;
+  text-align:center;
+  padding:.8rem 1rem;
+  font-weight:800;
+  font-size:.95rem;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.offer-box .offer-body{padding:1.5rem 1.25rem;text-align:center;background:#fff}
+.price-line{margin-bottom:1rem}
+.price-old{
+  font-size:1.2rem;
+  color:var(--muted);
+  text-decoration:line-through;
+  margin-right:.6rem;
+}
+.price-new{
+  font-size:2.6rem;
+  font-weight:800;
+  color:var(--brand-dark);
+  line-height:1;
+}
+.price-save{
+  display:inline-block;
+  background:#e7f6ef;
+  color:#0a6b47;
+  font-weight:700;
+  font-size:.9rem;
+  border-radius:99px;
+  padding:.3rem .9rem;
+  margin-top:.6rem;
+}
+.offer-extras{
+  list-style:none;
+  text-align:left;
+  max-width:420px;
+  margin:1.25rem auto;
+  font-size:.95rem;
+}
+.offer-extras li{
+  position:relative;
+  padding-left:1.8rem;
+  margin-bottom:.55rem;
+}
+.offer-extras li::before{
+  content:"✓";
+  position:absolute;left:0;top:.1rem;
+  width:1.25rem;height:1.25rem;border-radius:50%;
+  background:var(--accent);color:#fff;
+  font-size:.8rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.offer-totals{
+  border-top:1px dashed var(--line);
+  padding-top:1rem;
+  font-size:.95rem;
+  color:var(--ink-soft);
+}
+.offer-totals strong{color:var(--ink)}
+
+/* CTA */
+.cta-btn{
+  display:block;
+  width:100%;
+  max-width:480px;
+  margin:1.25rem auto .75rem;
+  background:linear-gradient(180deg, #f0641a, var(--cta));
+  color:#fff;
+  font-family:var(--sans);
+  font-weight:800;
+  font-size:1.15rem;
+  line-height:1.3;
+  text-align:center;
+  text-decoration:none;
+  padding:1.1rem 1.5rem;
+  border-radius:10px;
+  border:0;
+  box-shadow:0 4px 14px rgba(232,89,12,.35);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.cta-btn:hover, .cta-btn:focus{
+  background:linear-gradient(180deg, var(--cta), var(--cta-dark));
+  transform:translateY(-1px);
+  box-shadow:0 6px 18px rgba(232,89,12,.45);
+}
+.cta-btn small{
+  display:block;
+  font-weight:600;
+  font-size:.85rem;
+  opacity:.95;
+  margin-top:.2rem;
+}
+.cta-sub{
+  font-family:var(--sans);
+  font-size:.82rem;
+  color:var(--muted);
+  text-align:center;
+  margin-bottom:1rem;
+}
+.trust-row{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:.5rem 1.2rem;
+  font-family:var(--sans);
+  font-size:.82rem;
+  color:var(--ink-soft);
+  margin:.5rem 0 1rem;
+}
+.trust-row span{white-space:nowrap}
+
+/* Garantia */
+.guarantee{
+  border:2px dashed var(--accent);
+  background:#f2fbf7;
+  border-radius:12px;
+  padding:1.5rem 1.25rem;
+  margin:2rem 0;
+}
+.guarantee h2{margin-top:0}
+.guarantee .seal{
+  font-family:var(--sans);
+  font-weight:800;
+  font-size:.8rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:.5rem;
+}
+ul.refund{list-style:none;margin:0 0 1rem}
+ul.refund li{
+  position:relative;
+  padding-left:1.9rem;
+  margin-bottom:.55rem;
+}
+ul.refund li::before{
+  content:"→";
+  position:absolute;left:0;top:0;
+  color:var(--accent);
+  font-weight:800;
+  font-family:var(--sans);
+}
+
+/* Opções */
+.option{
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:1.15rem 1.25rem;
+  margin:1rem 0;
+}
+.option.bad{border-left:5px solid var(--danger)}
+.option.good{border-left:5px solid var(--accent);background:#f6fcf9}
+.option h3{margin-top:0}
+
+/* Nota do autor */
+.author-note{
+  border-top:1px solid var(--line);
+  margin-top:2.5rem;
+  padding-top:1.25rem;
+  font-family:var(--sans);
+  font-size:.85rem;
+  color:var(--muted);
+  font-style:italic;
+}
+
+/* Rodapé */
+footer.site-foot{
+  background:#101822;
+  color:#9aa7b5;
+  font-family:var(--sans);
+  font-size:.75rem;
+  text-align:center;
+  padding:1.75rem 1rem 6.5rem;
+  line-height:1.6;
+}
+footer.site-foot .foot-name{
+  color:#fff;
+  font-weight:800;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:.5rem;
+}
+@media(min-width:760px){
+  footer.site-foot{padding-bottom:1.75rem}
+}
+
+/* Barra fixa inferior (mobile) */
+.sticky-cta{
+  position:fixed;
+  left:0;right:0;bottom:0;
+  background:#fff;
+  border-top:1px solid var(--line);
+  box-shadow:0 -4px 16px rgba(16,24,34,.12);
+  padding:.6rem .9rem calc(.6rem + env(safe-area-inset-bottom));
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.75rem;
+  font-family:var(--sans);
+  z-index:50;
+  transform:translateY(110%);
+  transition:transform .3s ease;
+}
+.sticky-cta.show{transform:translateY(0)}
+.sticky-cta .sp{line-height:1.2}
+.sticky-cta .sp .old{
+  font-size:.75rem;color:var(--muted);text-decoration:line-through;display:block;
+}
+.sticky-cta .sp .new{
+  font-size:1.25rem;font-weight:800;color:var(--brand-dark);
+}
+.sticky-cta a{
+  flex:1;
+  max-width:260px;
+  background:var(--cta);
+  color:#fff;
+  font-weight:800;
+  font-size:.95rem;
+  text-align:center;
+  text-decoration:none;
+  padding:.85rem .75rem;
+  border-radius:8px;
+}
+.sticky-cta a:hover{background:var(--cta-dark)}
+@media(min-width:760px){
+  .sticky-cta{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">Publicidade — conteúdo patrocinado</div>
+
+<header class="masthead">
+  <div class="portal-name">SEU PORTAL AQUI</div>
+  <div class="portal-tag">Saúde &amp; Bem-Estar</div>
+</header>
+
+<nav class="crumbs" aria-label="Localização na página">
+  Início &rsaquo; Saúde &rsaquo; <strong>Sono</strong>
+</nav>
+
+<main class="wrap">
+
+  <p class="kicker">Saúde do sono</p>
+
+  <h1>Por que você ainda está roncando em 2025 e o que a ciência diz que você pode fazer a respeito</h1>
+
+  <p class="deck">Se você ainda ronca mesmo depois de tentar &ldquo;de tudo&rdquo;, dê uma olhada nesse artigo curto sobre a verdadeira ciência do ronco e a tecnologia inovadora que pode acabar com o seu ronco hoje mesmo.</p>
+
+  <div class="rating-row">
+    <span class="stars" aria-label="5 de 5 estrelas">★★★★★</span>
+    <span>2.847 avaliações <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></span>
+  </div>
+
+  <p class="byline">Por <strong>Dr. Michel Chen</strong>, Centro de Pesquisa do Sono de Harvard <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></p>
+
+  <div class="img-placeholder" role="img" aria-label="Imagem: pessoa roncando na cama enquanto o parceiro, incomodado, cobre os ouvidos com o travesseiro">
+    [IMAGEM: pessoa roncando na cama enquanto o parceiro, incomodado, cobre os ouvidos com o travesseiro]
+    <small>Substituir pela imagem real do hero</small>
+  </div>
+
+  <h2>A verdade escondida sobre por que você não consegue parar de roncar</h2>
+
+  <p>Você já percebeu que seu ronco está tornando sua vida e a vida do seu parceiro muito mais difícil — ou talvez a vida dos seus familiares ou do seu colega de quarto.</p>
+
+  <p>E estas são outras maneiras pelas quais isso pode estar afetando sua vida:</p>
+
+  <ul class="bullets">
+    <li>Você nunca se sente descansado, não importa o quanto durma</li>
+    <li>Você tem dores de cabeça frequentes e confusão mental</li>
+    <li>Você acorda com a boca seca</li>
+    <li>Você se sente envergonhado e constrangido ao dormir ao lado de alguém</li>
+    <li>Você sente falta de energia ao longo do dia</li>
+    <li>Seu parceiro está ameaçando dormir em quartos separados (ou pior)</li>
+  </ul>
+
+  <p>Sabemos disso porque o ronco afeta quase metade dos americanos (44% dos homens e 27% das mulheres). <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark> E é sabido que só piora com a idade.</p>
+
+  <p>Se o ronco é tão comum e causa tantos problemas, por que ainda não o curamos?</p>
+
+  <h2>A indústria de US$ 12 bilhões <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark> construída em soluções falsas</h2>
+
+  <p>Existem dezenas de &ldquo;soluções anti-ronco&rdquo; que prometem o mundo, mas não cumprem o que prometem.</p>
+
+  <p>De tiras nasais e dilatadores... A protetores bucais e tiras para o queixo... A &ldquo;exercícios para ronco&rdquo; e travesseiros especiais... A máquinas CPAP caras e cirurgias...</p>
+
+  <p>Mas se fosse realmente possível silenciar o ronco com tiras nasais de US$ 12 ou um aparelho CPAP de US$ 4.000, por que as pessoas ainda roncam?</p>
+
+  <p><strong>A resposta vai te surpreender.</strong></p>
+
+  <h2>O que a faculdade de medicina errou sobre o ronco</h2>
+
+  <p>Por mais de 100 anos, os médicos foram ensinados que o ronco é um problema mecânico:</p>
+
+  <p><em>&ldquo;As vias respiratórias ficam bloqueadas, então precisamos forçar o ar a passar ou remover o bloqueio.&rdquo;</em></p>
+
+  <p>Isso levou a tratamentos como:</p>
+
+  <ul class="bullets">
+    <li>Aparelhos CPAP (forçam o ar a passar)</li>
+    <li>Cirurgia (removem o tecido que bloqueia as vias respiratórias)</li>
+    <li>Protetores bucais (reposicionam a mandíbula mecanicamente)</li>
+  </ul>
+
+  <p>Mas uma pesquisa inovadora da Harvard em 2019 <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark> revelou algo chocante:</p>
+
+  <div class="pull">O ronco não é um problema mecânico. É um problema elétrico.</div>
+
+  <h2>A verdadeira causa do ronco (que seu médico não conhece)</h2>
+
+  <p>Eis o que realmente acontece quando você ronca:</p>
+
+  <p>Durante o sono, os sinais elétricos do seu cérebro para os músculos da garganta diminuem em 70-80%. <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></p>
+
+  <p>Os músculos da garganta não colapsam por causa das vias respiratórias bloqueadas — eles colapsam porque literalmente &ldquo;adormecem&rdquo; quando você mais precisa que eles estejam ativos.</p>
+
+  <p>É como se os músculos da sua garganta perdessem sua &ldquo;fonte de energia&rdquo; todas as noites.</p>
+
+  <p><strong>É por isso que todas as soluções mecânicas falham:</strong></p>
+
+  <ul class="crosses">
+    <li>As tiras nasais abrem o nariz, mas não alimentam os músculos da garganta</li>
+    <li>O CPAP força o ar através dos músculos colapsados, mas não impede o colapso</li>
+    <li>A cirurgia remove o tecido, mas não restaura os sinais elétricos</li>
+    <li>Os protetores bucais reposicionam a mandíbula, mas os músculos ainda perdem força</li>
+  </ul>
+
+  <div class="pull alert">Você tem tratado o sintoma, não a causa.</div>
+
+  <h2>&ldquo;Mas e os aparelhos CPAP? Meu médico diz que eles são o padrão ouro&rdquo;</h2>
+
+  <p>Ótima pergunta. Vamos ver os fatos:</p>
+
+  <div class="factbox">
+    <h3>Aparelhos CPAP</h3>
+    <ul class="bullets">
+      <li><strong>Custo:</strong> mais de US$ 4.000, mais US$ 200/mês em suprimentos <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+      <li><strong>Taxa de sucesso:</strong> apenas 68% veem alguma melhora <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+      <li><strong>Adesão:</strong> apenas 32% ainda os usam após 1 ano <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+      <li><strong>Por que eles falham:</strong> forçam o ar através dos músculos colapsados em vez de impedir o colapso</li>
+    </ul>
+  </div>
+
+  <p>Além disso:</p>
+
+  <ul class="crosses">
+    <li><strong>Inconfortáveis</strong> — É como dormir com uma máscara do Darth Vader</li>
+    <li><strong>Volumosos</strong> — O que acontece quando você viaja?</li>
+    <li><strong>Caros</strong> — Mais de US$ 18.000 em 5 anos <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+    <li><strong>Efeitos colaterais</strong> — Irritação da pele, claustrofobia, boca seca</li>
+  </ul>
+
+  <div class="pull alert">Estudos mostram que 50% dos pacientes param de usar o CPAP ou nunca compram o medicamento prescrito. <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></div>
+
+  <h2>&ldquo;E aqueles protetores bucais personalizados que vejo anunciados?&rdquo;</h2>
+
+  <div class="factbox">
+    <h3>Dispositivos de avanço mandibular (MADs)</h3>
+    <ul class="bullets">
+      <li><strong>Custo:</strong> mais de US$ 2.000 para ajuste personalizado <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+      <li><strong>Processo:</strong> meses de consultas ao dentista</li>
+      <li><strong>Conforto:</strong> plástico rígido, força a boca a fechar</li>
+      <li><strong>Taxa de sucesso:</strong> 45% observam alguma melhoria <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+      <li><strong>Problema:</strong> Ainda não resolve o problema do sinal elétrico</li>
+    </ul>
+  </div>
+
+  <p>Sim, são melhores do que o CPAP em termos de conforto, mas continuam a tratar o problema errado.</p>
+
+  <p>Além disso, a maioria dos planos de saúde não cobre — absurdo, né?</p>
+
+  <h2>A descoberta médica que mudou tudo</h2>
+
+  <p>Em 2019, a Harvard Medical School publicou uma pesquisa que revolucionou nossa compreensão do ronco. <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></p>
+
+  <p>Eles descobriram que a verdadeira solução não é mecânica — <strong>é elétrica</strong>.</p>
+
+  <p>Em vez de forçar o ar através dos músculos colapsados ou reposicionar os tecidos, e se você pudesse impedir que os músculos &ldquo;adormecessem&rdquo; em primeiro lugar?</p>
+
+  <p>Isso levou ao desenvolvimento da <strong>terapia EMS (Estimulação Muscular Elétrica)</strong> para o ronco — o primeiro tratamento que trata a causa real.</p>
+
+  <h2>Apresentando o PulseAir™: a primeira solução elétrica para o ronco</h2>
+
+  <div class="img-placeholder" role="img" aria-label="Imagem: dispositivo PulseAir com almofada de silicone posicionado no pescoço de uma pessoa dormindo tranquilamente">
+    [IMAGEM: dispositivo PulseAir™ com almofada de silicone posicionado no pescoço de uma pessoa dormindo tranquilamente]
+    <small>Substituir pela foto real do produto em uso</small>
+  </div>
+
+  <p>O PulseAir™ é um dispositivo ultraleve que usa tecnologia EMS de nível médico para manter os músculos da garganta ativos durante toda a noite.</p>
+
+  <p><strong>Veja como funciona:</strong></p>
+
+  <div class="steps">
+    <div class="step"><span class="n" aria-hidden="true">1</span><p><strong>Passo 1:</strong> Coloque a almofada de silicone macia suavemente na sua garganta (leva 30 segundos)</p></div>
+    <div class="step"><span class="n" aria-hidden="true">2</span><p><strong>Passo 2:</strong> Durma normalmente na posição que desejar</p></div>
+    <div class="step"><span class="n" aria-hidden="true">3</span><p><strong>Passo 3:</strong> O PulseAir™ envia pulsos elétricos suaves para evitar o colapso muscular</p></div>
+    <div class="step"><span class="n" aria-hidden="true">4</span><p><strong>Passo 4:</strong> Acorde em silêncio total — sem mais roncos</p></div>
+  </div>
+
+  <p>Você não sentirá os pulsos. Você apenas respirará perfeitamente durante toda a noite.</p>
+
+  <a class="cta-btn" href="#checkout">QUERO CONHECER O PULSEAIR™<small>Oferta de lançamento: R$ 137 (economize R$ 60)</small></a>
+  <p class="cta-sub">Garantia de reembolso de 60 dias &middot; Frete grátis</p>
+
+  <h2>Como o PulseAir™ supera todas as outras soluções</h2>
+
+  <div class="table-scroll">
+    <table class="compare">
+      <caption>Comparativo: PulseAir™ vs. outras soluções anti-ronco</caption>
+      <thead>
+        <tr>
+          <th scope="col">Característica</th>
+          <th scope="col">PulseAir™</th>
+          <th scope="col">CPAP</th>
+          <th scope="col">Protetor bucal</th>
+          <th scope="col">Cirurgia</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">Ataca a causa raiz</th>
+          <td class="win"><span class="yes">✓</span> Sim</td>
+          <td><span class="no">✕</span> Não</td>
+          <td><span class="no">✕</span> Não</td>
+          <td><span class="no">✕</span> Não</td>
+        </tr>
+        <tr>
+          <th scope="row">Taxa de sucesso <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></th>
+          <td class="win">96%</td>
+          <td>68%</td>
+          <td>45%</td>
+          <td>52%</td>
+        </tr>
+        <tr>
+          <th scope="row">Nível de conforto</th>
+          <td class="win">Perfeito</td>
+          <td>Ruim</td>
+          <td>Inconfortável</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <th scope="row">Posição para dormir</th>
+          <td class="win">Qualquer</td>
+          <td>Apenas de costas</td>
+          <td>Limitada</td>
+          <td>Qualquer</td>
+        </tr>
+        <tr>
+          <th scope="row">Custo em 5 anos <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></th>
+          <td class="win">R$ 197</td>
+          <td>R$ 18.000+</td>
+          <td>R$ 4.500</td>
+          <td>R$ 15.000</td>
+        </tr>
+        <tr>
+          <th scope="row">Tempo de configuração</th>
+          <td class="win">30 segundos</td>
+          <td>20 minutos</td>
+          <td>5 minutos</td>
+          <td>Meses</td>
+        </tr>
+        <tr>
+          <th scope="row">Efeitos colaterais</th>
+          <td class="win">Nenhum</td>
+          <td>Muitos</td>
+          <td>Dor na mandíbula</td>
+          <td>Alto risco</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="table-hint">Arraste a tabela para o lado para ver todas as colunas &rarr;</p>
+
+  <p><strong>Os números não mentem. O PulseAir™ é superior em todas as categorias.</strong></p>
+
+  <h2>&ldquo;Parece bom demais para ser verdade. Qual é a pegadinha?&rdquo;</h2>
+
+  <p>A questão é a seguinte: não tem pegadinha.</p>
+
+  <p>A tecnologia EMS é usada com segurança em hospitais há mais de 60 anos. <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark> O PulseAir™ só aplica essa tecnologia comprovada para resolver o ronco.</p>
+
+  <ul class="checks">
+    <li><strong>Aprovado pela FDA:</strong> dispositivo médico de classe II <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+    <li><strong>Ensaios clínicos:</strong> 96% de taxa de sucesso em estudos <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+    <li><strong>Segurança testada:</strong> mais de 47.000 usuários satisfeitos <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+    <li><strong>Aprovado pelas autoridades regulatórias:</strong> EUA, Europa, Canadá, Austrália <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+  </ul>
+
+  <p>A única &ldquo;pegadinha&rdquo; é que a maioria dos médicos ainda não conhece porque:</p>
+
+  <ol class="steps-list">
+    <li>É uma tecnologia nova (descoberta em 2019) <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+    <li>Ameaça a indústria de CPAP, que movimenta US$ 2,8 bilhões <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+    <li>As faculdades de medicina estão 5 a 10 anos atrás das pesquisas mais recentes</li>
+  </ol>
+
+  <h2>Pessoas reais, resultados reais</h2>
+
+  <div class="img-placeholder" role="img" aria-label="Imagem: mosaico com fotos de clientes reais usando o PulseAir">
+    [IMAGEM: mosaico com fotos de clientes reais usando o PulseAir™]
+    <small>Substituir por fotos reais de clientes (com autorização de uso de imagem)</small>
+  </div>
+
+  <div class="testimonial">
+    <p class="t-title">&ldquo;Casamento salvo após 8 anos dormindo em quartos separados&rdquo;</p>
+    <span class="stars" aria-label="5 de 5 estrelas">★★★★★</span>
+    <p>&ldquo;Gastei US$ 12.000 em estudos do sono, CPAP, aparelhos dentários — nada funcionou. Minha esposa mudou-se para o quarto de hóspedes. Primeira noite com o PulseAir™... silêncio total. Ela chorou de alegria. Isso não só acabou com o meu ronco — salvou o meu casamento.&rdquo;</p>
+    <p class="t-author">— Mark T., Nova York <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></p>
+  </div>
+
+  <div class="testimonial">
+    <p class="t-title">&ldquo;Finalmente livre da prisão do CPAP&rdquo;</p>
+    <span class="stars" aria-label="5 de 5 estrelas">★★★★★</span>
+    <p>&ldquo;Seis meses de tortura com o CPAP — não conseguia respirar, claustrofobia, marcas no rosto. O PulseAir™ funciona perfeitamente e eu esqueço que estou usando. Por que mais pessoas não sabem disso?&rdquo;</p>
+    <p class="t-author">— Sarah M., Califórnia <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></p>
+  </div>
+
+  <div class="testimonial">
+    <p class="t-title">&ldquo;Confortável e eficaz&rdquo;</p>
+    <span class="stars" aria-label="5 de 5 estrelas">★★★★★</span>
+    <p>&ldquo;Tentei vários aparelhos bucais, mas nunca consegui me acostumar com eles. O PulseAir™ é incrível! Mal dá pra sentir e funciona desde a primeira noite. Super recomendo.&rdquo;</p>
+    <p class="t-author">— Chris H., Texas <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></p>
+  </div>
+
+  <h2>Você realmente tem 3 opções</h2>
+
+  <div class="option bad">
+    <h3>Opção 1: Não fazer nada</h3>
+    <p>Essa é uma péssima ideia. A obstrução das vias respiratórias que causa o ronco impede que o oxigênio chegue ao cérebro e ao corpo... causando dores de cabeça inexplicáveis, confusão mental e fadiga... e, com o tempo, essa falta de oxigênio pode levar à hipertensão, problemas cardíacos e até danos cerebrais.</p>
+  </div>
+
+  <div class="option bad">
+    <h3>Opção 2: Continue tentando &ldquo;soluções&rdquo; ultrapassadas</h3>
+    <p>Gaste mais dinheiro com aparelhos CPAP (R$ 18.000 em 5 anos), protetores bucais personalizados (R$ 4.500) ou cirurgias arriscadas (R$ 15.000) <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark> que tratam os sintomas em vez da causa. A maioria das pessoas tenta esse caminho e fracassa.</p>
+  </div>
+
+  <div class="option good">
+    <h3>Opção 3: Experimente a tecnologia que realmente funciona</h3>
+    <p>Adquira o PulseAir™ — o único dispositivo que trata a causa real do ronco usando tecnologia médica comprovada. Junte-se a mais de 47.000 pessoas <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark> que finalmente resolveram seu problema de ronco.</p>
+  </div>
+
+  <h2 id="preco">Quanto custa o PulseAir™?</h2>
+
+  <p>Esta é a parte mais impressionante.</p>
+
+  <ul class="bullets">
+    <li>Um protetor bucal personalizado custa <strong>mais de R$ 2.000</strong> <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+    <li>Uma máquina CPAP custa <strong>mais de R$ 4.000, mais R$ 200 por mês</strong> <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+    <li>A cirurgia custa <strong>mais de R$ 15.000, sem garantia</strong> <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></li>
+  </ul>
+
+  <p><strong>O PulseAir™ custa apenas R$ 197.</strong></p>
+
+  <p>Isso é menos do que um mês de suprimentos para CPAP. Menos de 1/10 do custo de um protetor bucal. Menos de 1/75 do custo da cirurgia.</p>
+
+  <p><strong>Mas aqui está a melhor parte:</strong></p>
+
+  <h2 id="oferta">Como obter o PulseAir™ por ainda menos</h2>
+
+  <p>Para quem está lendo este artigo, há um <strong>desconto especial de lançamento</strong> disponível agora mesmo.</p>
+
+  <p>Em vez de R$ 197, você pode obter o PulseAir™ por apenas <strong>R$ 137</strong>.</p>
+
+  <p>Isso representa um desconto de R$ 60, mas apenas para os próximos 127 clientes. <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></p>
+
+  <div class="offer-box">
+    <div class="offer-head">Oferta especial de lançamento</div>
+    <div class="offer-body">
+      <div class="price-line">
+        <span class="price-old">R$ 197</span>
+        <span class="price-new">R$ 137</span>
+        <br>
+        <span class="price-save">Você economiza R$ 60</span>
+      </div>
+
+      <p style="font-family:var(--sans);font-weight:700;font-size:.9rem;margin-bottom:.25rem;">MAIS:</p>
+      <ul class="offer-extras">
+        <li>Frete grátis para todo o mundo (valor: R$ 15)</li>
+        <li>Estojo de viagem premium (valor: R$ 29)</li>
+        <li>Garantia de 60 dias de devolução do dinheiro (inestimável)</li>
+      </ul>
+
+      <div class="offer-totals">
+        <p>Valor total do pacote: <s>R$ 270</s><br>
+        Seu preço hoje: <strong>apenas R$ 137</strong><br>
+        Você economiza: <strong>R$ 133 (49% DE DESCONTO)</strong></p>
+      </div>
+
+      <a class="cta-btn" href="#checkout" id="checkout">COMPRE O PULSEAIR™ AGORA — R$ 137<small>(economize R$ 60)</small></a>
+
+      <div class="trust-row">
+        <span>✓ Garantia de reembolso de 60 dias</span>
+        <span>🚚 Frete grátis para todo o mundo</span>
+        <span>⚡ Envio em até 24 horas</span>
+        <span>🎁 Inclui estojo de viagem premium</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="guarantee">
+    <p class="seal">Garantia incondicional</p>
+    <h2>Garantia de 60 dias sem riscos</h2>
+    <p>Experimente o PulseAir™ por 60 noites completas, sem nenhum risco.</p>
+    <ul class="refund">
+      <li>Se você não parar de roncar em 30 dias &rarr; <strong>REEMBOLSO TOTAL</strong></li>
+      <li>Se você não estiver 100% satisfeito &rarr; <strong>REEMBOLSO TOTAL</strong></li>
+      <li>Se não for mais confortável do que qualquer outro produto que você já experimentou &rarr; <strong>REEMBOLSO TOTAL</strong></li>
+      <li>Se você tiver QUALQUER motivo para ficar insatisfeito &rarr; <strong>REEMBOLSO TOTAL</strong></li>
+    </ul>
+    <p>Sem perguntas. Sem taxas de reabastecimento. Reembolso processado em 24 horas.</p>
+    <p>Podemos oferecer essa garantia porque 96% dos clientes obtêm resultados na primeira noite. <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark> Os outros 4% recebem seu dinheiro de volta, sem ressentimentos.</p>
+  </div>
+
+  <h2>O que fazer a seguir</h2>
+
+  <div class="steps">
+    <div class="step"><span class="n" aria-hidden="true">1</span><p><strong>Passo 1:</strong> Clique no botão abaixo para garantir seu PulseAir™ com desconto</p></div>
+    <div class="step"><span class="n" aria-hidden="true">2</span><p><strong>Passo 2:</strong> Preencha suas informações de envio</p></div>
+    <div class="step"><span class="n" aria-hidden="true">3</span><p><strong>Passo 3:</strong> Receba seu PulseAir™ em 3 a 5 dias úteis</p></div>
+    <div class="step"><span class="n" aria-hidden="true">4</span><p><strong>Passo 4:</strong> Use-o hoje à noite e tenha uma noite de sono silenciosa e tranquila</p></div>
+  </div>
+
+  <a class="cta-btn" href="#checkout">COMPRE O PULSEAIR™ AGORA — R$ 137<small>(economize R$ 60)</small></a>
+
+  <div class="trust-row">
+    <span>✓ Garantia de reembolso de 60 dias</span>
+    <span>🚚 Frete grátis para todo o mundo</span>
+    <span>⚡ Envio em até 24 horas</span>
+    <span>🎁 Inclui estojo de viagem premium</span>
+  </div>
+
+  <h2>Lembre-se por que isso é importante</h2>
+
+  <p>Acabar com o ronco é muito mais do que apenas acabar com o barulho noturno:</p>
+
+  <ul class="checks">
+    <li>Melhora a sua ingestão de oxigênio e a função cerebral</li>
+    <li>Reduz dores de cabeça, confusão mental e fadiga</li>
+    <li>Fortalece os seus relacionamentos e salva casamentos</li>
+    <li>Elimina o constrangimento ao viajar ou passar a noite fora</li>
+    <li>Dá-lhe energia para aproveitar a vida novamente</li>
+  </ul>
+
+  <p>E agora, com uma solução tão acessível, com uma garantia de 60 dias totalmente sem riscos, não há motivo para não experimentar.</p>
+
+  <h2>A escolha é sua</h2>
+
+  <p>Você pode continuar tentando soluções ultrapassadas que tratam os sintomas...</p>
+
+  <p>Ou você pode experimentar a tecnologia inovadora que trata a causa real do ronco.</p>
+
+  <p>Mais de 47.000 pessoas <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark> já escolheram o PulseAir™. Junte-se a elas hoje à noite.</p>
+
+  <a class="cta-btn" href="#checkout">REIVINDIQUE SEU DESCONTO — Apenas R$ 137</a>
+
+  <div class="trust-row">
+    <span>⏰ Tempo limitado: apenas 127 unidades disponíveis a este preço <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></span>
+  </div>
+  <div class="trust-row">
+    <span>🔒 Sem riscos: garantia de reembolso de 60 dias</span>
+    <span>🚚 Envio rápido: chega em 3-5 dias</span>
+  </div>
+
+  <p style="text-align:center;font-weight:700;margin-top:1.5rem;">O seu melhor sono está a apenas um clique de distância.</p>
+
+  <p class="author-note">O Dr. Michel Chen é especialista em medicina do sono na Harvard Medical School e investigador principal na terapia EMS para distúrbios respiratórios do sono. Não tem qualquer relação financeira com a PulseAir™. <mark class="validar">[VALIDAR: comprovar com fonte real ou remover antes de publicar]</mark></p>
+
+</main>
+
+<footer class="site-foot">
+  <p class="foot-name">SEU PORTAL AQUI</p>
+  <p>Este é um advertorial: conteúdo publicitário produzido em parceria com a marca anunciante. Os resultados podem variar de pessoa para pessoa. Este conteúdo não substitui orientação médica profissional. Consulte um médico antes de iniciar qualquer tratamento.</p>
+  <p>&copy; 2025 SEU PORTAL AQUI. Todos os direitos reservados.</p>
+</footer>
+
+<!-- Barra fixa inferior (mobile) -->
+<div class="sticky-cta" id="stickyCta" aria-hidden="true">
+  <div class="sp">
+    <span class="old">R$ 197</span>
+    <span class="new">R$ 137</span>
+  </div>
+  <a href="#checkout" aria-label="Comprar o PulseAir agora por 137 reais">COMPRAR AGORA</a>
+</div>
+
+<script>
+(function(){
+  var sticky = document.getElementById('stickyCta');
+  var offer = document.getElementById('oferta');
+  if(!sticky || !offer) return;
+
+  function toggle(show){
+    sticky.classList.toggle('show', show);
+    sticky.setAttribute('aria-hidden', show ? 'false' : 'true');
+  }
+
+  if('IntersectionObserver' in window){
+    var passed = false;
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting || entry.boundingClientRect.top < 0){
+          passed = true;
+        } else if(entry.boundingClientRect.top > 0){
+          passed = false;
+        }
+        toggle(passed);
+      });
+    }, {rootMargin:'0px 0px -20% 0px'});
+    io.observe(offer);
+  } else {
+    window.addEventListener('scroll', function(){
+      toggle(offer.getBoundingClientRect().top < window.innerHeight * 0.8);
+    }, {passive:true});
+  }
+})();
+</script>
+
+</body>
+</html>
