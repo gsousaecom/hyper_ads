@@ -2327,6 +2327,9 @@ function renderSubAdsetPublishStep(){
           <p style="font-size:.75rem;font-weight:700;color:#DC2626;margin:0 0 .5rem;">Erros (${w.pubErrors.length}):</p>
           ${w.pubErrors.map(e=>`<p style="font-size:.7rem;color:#DC2626;margin:.125rem 0;">${esc(e)}</p>`).join('')}
         </div>`:''}
+        ${w.pubLog.length?`<div style="margin-top:.75rem;background:#020617;border-radius:.625rem;padding:.625rem;font-family:monospace;font-size:.65rem;max-height:220px;overflow-y:auto;text-align:left;display:flex;flex-direction:column;gap:.125rem;">
+        ${w.pubLog.slice(-60).map(l=>`<span style="color:${l.t==='error'?'#EF4444':l.t==='success'?'#22C55E':l.t==='loading'?'#F59E0B':'#94A3B8'};">${esc(l.m)}</span>`).join('')}
+      </div>`:''}
       </div>`;
     }
     return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.875rem;padding:1.25rem;">
@@ -2358,6 +2361,9 @@ function renderSubAdsetPublishStep(){
       ${w.pubErrors.length?`<div style="margin-top:1rem;background:#FEF2F2;border:1px solid #FECACA;border-radius:.625rem;padding:.875rem;text-align:left;">
         <p style="font-size:.75rem;font-weight:700;color:#DC2626;margin:0 0 .5rem;">Erros (${w.pubErrors.length}):</p>
         ${w.pubErrors.map(e=>`<p style="font-size:.7rem;color:#DC2626;margin:.125rem 0;">${esc(e)}</p>`).join('')}
+      </div>`:''}
+      ${w.pubLog.length?`<div style="margin-top:.75rem;background:#020617;border-radius:.625rem;padding:.625rem;font-family:monospace;font-size:.65rem;max-height:220px;overflow-y:auto;text-align:left;display:flex;flex-direction:column;gap:.125rem;">
+        ${w.pubLog.slice(-60).map(l=>`<span style="color:${l.t==='error'?'#EF4444':l.t==='success'?'#22C55E':l.t==='loading'?'#F59E0B':'#94A3B8'};">${esc(l.m)}</span>`).join('')}
       </div>`:''}
     </div>`;
   }
@@ -4295,7 +4301,10 @@ async function publishSubAdset(){
     w.createdAdsetIds=res.adsetIds.filter(Boolean);
     w.createdAdsetId=w.createdAdsetIds[0]||null;
     w.adsetsOk=res.adsetsOk;w.adsetsTotal=res.adsetsTotal;w.adsOk=res.adsOk;w.adsTotal=res.adsTotal;
-    if(!w.addAdsTo&&res.adsetsOk<res.adsetsTotal)w.pubErrors.push(`${res.adsetsTotal-res.adsetsOk} conjunto(s) não criado(s) — veja o log.`);
+    const det=[...new Set(res.errors||[])];
+    det.slice(0,6).forEach(e=>w.pubErrors.push(e));
+    if(det.length>6)w.pubErrors.push(`...e mais ${det.length-6} erro(s) — veja o log completo abaixo.`);
+    if(!w.addAdsTo&&res.adsetsOk<res.adsetsTotal&&!det.length)w.pubErrors.push(`${res.adsetsTotal-res.adsetsOk} conjunto(s) não criado(s) — veja o log.`);
     if(res.adsOk<res.adsTotal)w.pubErrors.push(`${res.adsTotal-res.adsOk} anúncio(s) não criado(s) — veja o log.`);
     subWizardLog(w.addAdsTo?`🎉 Concluído! Anúncios adicionados:${res.adsOk}/${res.adsTotal}`:`🎉 Concluído! Conjuntos:${res.adsetsOk}/${res.adsetsTotal} | Anúncios:${res.adsOk}/${res.adsTotal}`,res.adsOk===res.adsTotal&&(w.addAdsTo||res.adsetsOk===res.adsetsTotal)?'success':'loading');
   } catch(e){
@@ -4409,6 +4418,7 @@ async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FAS
   const plog=log;
   const {ns,na}=S,cc=S.cc,ds=S.ds,da=S.da,mode=S.creativeMode||'single';
   const ar=[],am=[];
+  const errList=[];
   let aids=null;
   if(existingAdsetIds&&existingAdsetIds.length){
     // Modo "adicionar anúncios": os conjuntos já existem — pula a fase de criação
@@ -4440,7 +4450,12 @@ async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FAS
     }
   });
   const ab=await batchApi(ar,S.token);bump(Math.ceil(ar.length/50));
-  aids=ab.map((r,i)=>{const p=parseBatch(r);if(p.error){plog(`  ✗ Set C${am[i].ci+1}S${am[i].si+1}: ${p.error.message}`,'error');return null;}return p.id;});
+  let _loggedReq=false;
+  aids=ab.map((r,i)=>{const p=parseBatch(r);if(p.error){
+    plog(`  ✗ Set C${am[i].ci+1}S${am[i].si+1}: ${p.error.message}`,'error');
+    errList.push(`Conjunto ${am[i].si+1}: ${p.error.message}`);
+    if(!_loggedReq){_loggedReq=true;try{plog(`  📋 Request: ${decodeURIComponent(ar[i].body).slice(0,240)}…`,'info');}catch{}}
+    return null;}return p.id;});
   plog(`  ${aids.filter(Boolean).length}/${ar.length} conjuntos criados`,'info');
   }
   if(stopPub)throw new Error('stop');
@@ -4543,7 +4558,7 @@ async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FAS
       }else{
         crid[ai]=p.id;
       }
-    }else{plog(`  ✗ Creative C${ci+1}S${si+1}${(perAdMedia||perAdCopy||matrixPerAd||editPerAdset)?'A'+(adIdx+1):''}: ${p.error.message}`,'error');}
+    }else{plog(`  ✗ Creative C${ci+1}S${si+1}${(perAdMedia||perAdCopy||matrixPerAd||editPerAdset)?'A'+(adIdx+1):''}: ${p.error.message}`,'error');errList.push(`Criativo S${si+1}${(perAdMedia||perAdCopy||matrixPerAd||editPerAdset)?'A'+(adIdx+1):''}: ${p.error.message}`);}
   });
   plog(`  ${Object.keys(crid).length+Object.keys(crid_multi).length} adsets com criativos criados`,'info');
   if(stopPub)throw new Error('stop');
@@ -4568,8 +4583,9 @@ async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FAS
   }
   const aab=await batchApi(aq,S.token);bump(Math.ceil(aq.length/50));
   const ok=aab.filter(r=>!parseBatch(r).error).length;
+  aab.forEach((r,i)=>{const p=parseBatch(r);if(p.error){errList.push(`Anúncio: ${p.error.message}`);if(i<3)plog(`  ✗ Anúncio: ${p.error.message}`,'error');}});
   plog(`  ${ok}/${aq.length} anúncios criados`,'info');
-  return {adsetIds:aids,adsetsOk:aids.filter(Boolean).length,adsetsTotal:existingAdsetIds?aids.length:ar.length,adsOk:ok,adsTotal:aq.length};
+  return {adsetIds:aids,adsetsOk:aids.filter(Boolean).length,adsetsTotal:existingAdsetIds?aids.length:ar.length,adsOk:ok,adsTotal:aq.length,errors:errList};
 }
 
 async function startPub(){
