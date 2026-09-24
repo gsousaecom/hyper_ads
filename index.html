@@ -68,6 +68,8 @@ body.dark ::-webkit-scrollbar-thumb { background: #2a3a56; }
 <div id="app"></div>
 <div id="toast-container"></div>
 <script>
+const APP_VERSION='v24.09-2';
+console.log('HyperAds '+APP_VERSION);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const esc = s => {
@@ -748,7 +750,7 @@ function renderLogin() {
         ${S.connLogs.length?`<div style="display:flex;flex-direction:column;gap:.25rem;">${S.connLogs.map(l=>`<div style="font-size:.7rem;padding:.5rem .75rem;border-radius:.5rem;background:${l.t==='error'?'#fef2f2':l.t==='success'?'#f0fdf4':'#f8fafc'};color:${l.t==='error'?'#dc2626':l.t==='success'?'#16a34a':'#64748b'};">${l.t==='error'?'✗':l.t==='success'?'✓':'›'} ${esc(l.m)}</div>`).join('')}</div>`:''}
       </div>
     </div>
-    <p style="text-align:center;color:#8896ab;font-size:.65rem;margin-top:1.5rem;letter-spacing:.04em;">Dados salvos localmente · Batch API</p>
+    <p style="text-align:center;color:#8896ab;font-size:.65rem;margin-top:1.5rem;letter-spacing:.04em;">Dados salvos localmente · Batch API · ${APP_VERSION}</p>
     ${S.appUser?`<p style="text-align:center;color:#8896ab;font-size:.7rem;margin-top:.5rem;">👤 ${esc(S.appUser.name)} · <button onclick="appLogout()" style="background:transparent;border:none;color:#d7fa00;font-size:.7rem;cursor:pointer;padding:0;text-decoration:underline;">trocar usuário</button></p>`:''}
   </div></div>`;
 }
@@ -777,6 +779,7 @@ function renderMain() {
       </optgroup>` : ''; }).join('')}
     </select>
     ${renderApiUsageBadge()}
+    <p style="font-size:.5rem;color:rgba(255,255,255,.3);text-align:center;margin:.375rem 0 0;">${APP_VERSION}</p>
   </div>` : '';
 
   return `<div style="display:flex;height:100vh;overflow:hidden;">
@@ -4140,7 +4143,7 @@ async function openAddAdsWizard(cid,asid,qty){
   // Puxa 1 anúncio existente para pré-preencher página/URL/CTA/UTMs (mídia e copy ficam em branco: anúncios NOVOS)
   let ads=[];
   try{ads=await fetchAllPages(`/${asid}/ads`,{fields:'id,name,creative{object_story_spec,url_tags}',limit:3,access_token:S.token});}catch{}
-  openSubAdsetWizard(cid,qty,1);
+  await openSubAdsetWizard(cid,qty,1);
   if(!S.campaignEditor.subWizard)return;
   const spec=ads.find(a=>a.creative?.object_story_spec)?.creative;
   if(spec){
@@ -4172,7 +4175,7 @@ async function openDuplicateEditWizard(cid,asid){
   try{ads=await fetchAllPages(`/${asid}/ads`,{fields:'id,name,status,creative{object_story_spec,url_tags,thumbnail_url}',limit:50,access_token:S.token});}
   catch{toast('Anúncios não puderam ser carregados — configure a mídia manualmente','warning',4000);}
   const na=Math.min(30,Math.max(1,(ads||[]).filter(a=>a.creative?.object_story_spec).length||1));
-  openSubAdsetWizard(cid,na,1);
+  await openSubAdsetWizard(cid,na,1);
   if(!S.campaignEditor.subWizard)return;
   prefillFromAdset(as,ads||[]);
   S.campaignEditor.subWizard.duplicatedFrom=asid;
@@ -4182,9 +4185,17 @@ async function openDuplicateEditWizard(cid,asid){
 
 // ── Wizard de Novo Conjunto (mesmo formato do lançamento, mas para campanha existente)
 async function openSubAdsetWizard(cid,adCount=1,adsetCount=1){
-  const c=S.campaigns.find(x=>x.id===cid);if(!c){toast('Campanha não encontrada','error');return;}
+  let c=S.campaigns.find(x=>x.id===cid);if(!c){toast('Campanha não encontrada','error');return;}
   const na=Math.max(1,Math.min(30,parseInt(adCount)||1));
   const ns=Math.max(1,Math.min(100,parseInt(adsetCount)||1));
+  // Busca a config REAL da campanha — a listagem não traz bid_strategy/categorias/tipo,
+  // e usar defaults errados aqui faz a Meta recusar TODOS os conjuntos.
+  try{
+    const cf=await fbApi(`/${cid}`,{fields:'id,name,objective,status,daily_budget,lifetime_budget,bid_strategy,bid_amount,special_ad_categories,smart_promotion_type',access_token:S.token});
+    c={...c,...cf};
+  }catch(e){toast('Não foi possível ler a config da campanha ('+e.message+') — usando dados da listagem','warning',4000);}
+  if(c.smart_promotion_type==='AUTOMATED_SHOPPING_ADS'){toast('Campanha Advantage+ Shopping: a Meta não permite criar conjuntos manualmente nela.','error',7000);return;}
+  if(!OBJ_BILLING[c.objective||'OUTCOME_SALES']){toast('Objetivo "'+(c.objective||'?')+'" desta campanha não é suportado pelo app.','error',6000);return;}
   // Snapshot do contexto do launch normal para restaurar depois
   S.campaignEditor.subWizardSnapshot={
     nc:S.nc,ns:S.ns,na:S.na,bulkStep:S.bulkStep,
@@ -4417,6 +4428,7 @@ function allEffectivePageIds(){
 async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FASE ${n}/4`,existingAdsetIds=null}={}){
   const plog=log;
   const {ns,na}=S,cc=S.cc,ds=S.ds,da=S.da,mode=S.creativeMode||'single';
+  if(!OBJ_BILLING[cc.objective])throw new Error('Objetivo "'+cc.objective+'" não suportado para criação de conjuntos.');
   const ar=[],am=[];
   const errList=[];
   let aids=null;
@@ -4433,7 +4445,7 @@ async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FAS
       const tg={age_min:Math.max(18,ds.ageMin),age_max:Math.min(65,ds.ageMax),geo_locations:{countries:ds.countries.split(',').map(s=>s.trim()).filter(Boolean)||['US']},...(ds.genders==='female'?{genders:[2]}:ds.genders==='male'?{genders:[1]}:{}),...(ds.detailedTargeting?{flexible_spec:[{interests:ds.detailedTargeting.split(',').map(s=>({name:s.trim()}))}]}:{}),targeting_automation:{advantage_audience:ds.advantageAudience?1:0}};
       const og=OBJ_OPTIM[cc.objective],dt=OBJ_DEST[cc.objective];
       const bidStrategy=cc.bidStrategy||'LOWEST_COST_WITHOUT_CAP';
-      const b={name:(S.adsetNames[si]||`${todayPrefix()} — ${String(si+1).padStart(2,'0')}`).slice(0,255),campaign_id:cid,billing_event:OBJ_BILLING[cc.objective],optimization_goal:og,bid_strategy:bidStrategy,status:cc.status,targeting:tg,...(dt!=='UNDEFINED'?{destination_type:dt}:{}),...(og==='OFFSITE_CONVERSIONS'?{attribution_spec:JSON.stringify([{event_type:'CLICK_THROUGH',window_days:7}])}:{})};
+      const b={name:(S.adsetNames[si]||`${todayPrefix()} — ${String(si+1).padStart(2,'0')}`).slice(0,255),campaign_id:cid,billing_event:OBJ_BILLING[cc.objective],optimization_goal:og,...(!cc.cbo?{bid_strategy:bidStrategy}:{}),status:cc.status,targeting:tg,...(dt!=='UNDEFINED'?{destination_type:dt}:{}),...(og==='OFFSITE_CONVERSIONS'?{attribution_spec:JSON.stringify([{event_type:'CLICK_THROUGH',window_days:7}])}:{})};
       // Bid amount: prefer adset-level (ds.bidAmount), fallback to campaign-level (cc.bidAmount)
       const effBidAmount=ds.bidAmount||cc.bidAmount;
       if((bidStrategy==='LOWEST_COST_WITH_BID_CAP'||bidStrategy==='COST_CAP')&&effBidAmount){
