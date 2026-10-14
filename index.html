@@ -68,7 +68,7 @@ body.dark ::-webkit-scrollbar-thumb { background: #2a3a56; }
 <div id="app"></div>
 <div id="toast-container"></div>
 <script>
-const APP_VERSION='v24.09-3';
+const APP_VERSION='v14.10-1';
 console.log('HyperAds '+APP_VERSION);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -270,6 +270,10 @@ const BULK_STEPS = ['Estrutura','Campanha','Conjunto','Anúncio','Revisar','Publ
 // Retorna a lista dinâmica de steps. Quando editAdsPerAdset está ativo e ns>1,
 // expande "Anúncio" em N steps (um por conjunto).
 function getDynamicSteps(){
+  if(S.editAdsPerCampaign&&S.nc>1){
+    const adSteps=Array.from({length:S.nc},(_,i)=>`Anúncio Camp ${i+1}`);
+    return ['Estrutura','Campanha','Conjunto',...adSteps,'Revisar','Publicar'];
+  }
   if(S.editAdsPerAdset&&S.ns>1){
     const adSteps=Array.from({length:S.ns},(_,i)=>`Anúncio Conj ${i+1}`);
     return ['Estrutura','Campanha','Conjunto',...adSteps,'Revisar','Publicar'];
@@ -279,14 +283,20 @@ function getDynamicSteps(){
 // Retorna { type: 'estrutura'|'campanha'|'conjunto'|'anuncio'|'revisar'|'publicar', adsetIdx: number }
 function getStepInfo(idx){
   const types=['estrutura','campanha','conjunto'];
-  if(idx<3)return {type:types[idx],adsetIdx:-1};
+  if(idx<3)return {type:types[idx],adsetIdx:-1,campIdx:-1};
+  if(S.editAdsPerCampaign&&S.nc>1){
+    const adEnd=3+S.nc;
+    if(idx<adEnd)return {type:'anuncio',adsetIdx:-1,campIdx:idx-3};
+    if(idx===adEnd)return {type:'revisar',adsetIdx:-1,campIdx:-1};
+    return {type:'publicar',adsetIdx:-1,campIdx:-1};
+  }
   if(S.editAdsPerAdset&&S.ns>1){
     const adEnd=3+S.ns;
-    if(idx<adEnd)return {type:'anuncio',adsetIdx:idx-3};
-    if(idx===adEnd)return {type:'revisar',adsetIdx:-1};
-    return {type:'publicar',adsetIdx:-1};
+    if(idx<adEnd)return {type:'anuncio',adsetIdx:idx-3,campIdx:-1};
+    if(idx===adEnd)return {type:'revisar',adsetIdx:-1,campIdx:-1};
+    return {type:'publicar',adsetIdx:-1,campIdx:-1};
   }
-  return {type:['anuncio','revisar','publicar'][idx-3]||'publicar',adsetIdx:-1};
+  return {type:['anuncio','revisar','publicar'][idx-3]||'publicar',adsetIdx:-1,campIdx:-1};
 }
 const NAV = [
   { id:'dashboard', icon:'📈', label:'Dashboard' },
@@ -343,7 +353,7 @@ let S = {
   expandedCampaign:-1,
   mediaSelectTarget:null,
   creativeMode:'single', adsetCreatives:[], campAdsetCreatives:{}, expandedCampAdset:-1,
-  editAdsPerAdset:false, adsetAds:{},
+  editAdsPerAdset:false, adsetAds:{}, editAdsPerCampaign:false, campAds:{},
   adMediaMode:'single', adCreatives:[], adCopyMode:'single', adCopies:[],
   pageMode:'single', campaignPages:[],
   cc:{ objective:'OUTCOME_SALES', specialCat:'Nenhuma', cbo:false, cboBudgetType:'daily_budget', cboBudget:'', status:'PAUSED', bidStrategy:'LOWEST_COST_WITHOUT_CAP', bidAmount:'' },
@@ -1350,7 +1360,7 @@ function renderLaunch() {
     case 'estrutura':stepContent=renderS0();break;
     case 'campanha':stepContent=renderS1();break;
     case 'conjunto':stepContent=renderS2();break;
-    case 'anuncio':stepContent=renderS3(info.adsetIdx);break;
+    case 'anuncio':stepContent=(info.campIdx>=0&&S.editAdsPerCampaign)?renderS3ForCampaign(info.campIdx):renderS3(info.adsetIdx);break;
     case 'revisar':stepContent=renderS4();break;
     case 'publicar':stepContent=renderS5();break;
   }
@@ -1437,6 +1447,7 @@ function renderS1() {
       ${sel('Estratégia de lance','cc-bidstrategy',[['LOWEST_COST_WITHOUT_CAP','Maior volume (padrão)'],['LOWEST_COST_WITH_BID_CAP','Limite de lance (Bid Cap)'],['COST_CAP','Limite de custo (Cost Cap)'],['LOWEST_COST_WITH_MIN_ROAS','ROAS mínimo']],cc.bidStrategy,"S.cc.bidStrategy=this.value;R()")}
       ${cc.bidStrategy==='LOWEST_COST_WITH_BID_CAP'||cc.bidStrategy==='COST_CAP'?`<div style="padding-left:.5rem;">${inp(cc.bidStrategy==='COST_CAP'?'Custo máximo por resultado ($)':'Lance máximo por resultado ($)','cc-bidamount','number','5.00',cc.bidAmount,"S.cc.bidAmount=this.value")}<p style="font-size:.65rem;color:var(--text-muted);margin:.25rem 0 0;">${cc.bidStrategy==='LOWEST_COST_WITH_BID_CAP'?'Meta não vai dar lances acima deste valor por leilão':'Meta vai manter o custo médio por resultado em torno deste valor'}</p></div>`:''}
       ${cc.bidStrategy==='LOWEST_COST_WITH_MIN_ROAS'?`<div style="padding-left:.5rem;">${inp('ROAS mínimo (ex: 2.5)','cc-bidamount','number','2.5',cc.bidAmount,"S.cc.bidAmount=this.value")}<p style="font-size:.65rem;color:var(--text-muted);margin:.25rem 0 0;">Meta tenta manter o ROAS acima deste valor</p></div>`:''}
+      ${S.nc>1?tog(S.editAdsPerCampaign,"S.editAdsPerCampaign=!S.editAdsPerCampaign;if(S.editAdsPerCampaign)S.editAdsPerAdset=false;R()","Editar anúncios por campanha","Gera "+S.nc+" janelas de edição (1 por campanha) — cada campanha com seus próprios anúncios"):''}
     </div>
   </div>`)}`;
 }
@@ -1507,7 +1518,8 @@ function renderS2() {
     </div>
   </div>
   ${tog(ds.advantageAudience,"S.ds.advantageAudience=!S.ds.advantageAudience;R()","Advantage+ Audience","Meta expande automaticamente o público além do targeting definido")}
-  ${S.ns>1?tog(S.editAdsPerAdset,"S.editAdsPerAdset=!S.editAdsPerAdset;R()","Editar anúncios por conjunto","Gera "+S.ns+" janelas separadas de edição (1 por conjunto) em vez de uma única tela"):''}`)}`;
+  ${S.ns>1&&!S.editAdsPerCampaign?tog(S.editAdsPerAdset,"S.editAdsPerAdset=!S.editAdsPerAdset;if(S.editAdsPerAdset)S.editAdsPerCampaign=false;R()","Editar anúncios por conjunto","Gera "+S.ns+" janelas separadas de edição (1 por conjunto) em vez de uma única tela"):''}
+  ${S.editAdsPerCampaign&&S.nc>1?`<div style="background:rgba(215,250,0,.08);border:1px solid rgba(215,250,0,.3);border-radius:.625rem;padding:.625rem .875rem;font-size:.75rem;color:var(--text-primary);">ℹ️ <strong>Edição por campanha ativa</strong> — os anúncios serão definidos em ${S.nc} janelas, uma por campanha (ative/desative no passo Campanha).</div>`:''}`)}`;
 }
 
 // ── S3 — Anúncio (com modo de criativos) ──────────────────────────────────
@@ -2012,10 +2024,11 @@ function renderS3(adsetIdx=-1) {
 
 // Inicializa S.adsetAds[si] com estrutura completa (igual a S.da + extras de ad)
 // Copia seletivamente do primeiro conjunto (si=0) para o conjunto `target`
-function copyFromFirstAdset(target,section){
+function copyFromFirstAdset(target,section,base='adsetAds'){
   if(target<=0)return;
-  ensureAdsetAds(0);ensureAdsetAds(target);
-  const src=S.adsetAds[0],dst=S.adsetAds[target];
+  if(!S[base])S[base]={};
+  ensureAdConf(S[base],0);ensureAdConf(S[base],target);
+  const src=S[base][0],dst=S[base][target];
   if(section==='page'){
     dst.pageId=src.pageId;dst.pageName=src.pageName;
     toast('Página do Conj. 1 copiada','success',2000);
@@ -2032,9 +2045,11 @@ function copyFromFirstAdset(target,section){
   R();
 }
 
-function ensureAdsetAds(si){
-  if(!S.adsetAds[si]){
-    S.adsetAds[si]={
+function ensureAdsetAds(si){ensureAdConf(S.adsetAds,si);}
+function ensureCampAds(ci){if(!S.campAds)S.campAds={};ensureAdConf(S.campAds,ci);}
+function ensureAdConf(store,si){
+  if(!store[si]){
+    store[si]={
       pageId:'', pageName:'',
       linkUrl:'', urlParams:'',
       name:'', cta:'',
@@ -2044,7 +2059,7 @@ function ensureAdsetAds(si){
       adCreatives:[], adCopies:[]
     };
   }
-  const c=S.adsetAds[si];
+  const c=store[si];
   if(!Array.isArray(c.primaryTexts)||!c.primaryTexts.length)c.primaryTexts=[''];
   if(!Array.isArray(c.headlines)||!c.headlines.length)c.headlines=[''];
   if(!Array.isArray(c.adCreatives))c.adCreatives=[];
@@ -2052,29 +2067,33 @@ function ensureAdsetAds(si){
 }
 
 // Helper: renderiza o card de mídia padrão do conjunto (sem template aninhado complexo)
-function renderAdsetMediaCard(si,c){
+function renderAdsetMediaCard(si,c,base='adsetAds'){
   const isVideo=c.mediaType==='video'&&c.videoId;
   const isImage=c.mediaType==='image'&&(c.imageUrl||c.imageHash);
   let body='';
   if(isVideo){
     const thumb=c.videoThumb?('<img src="'+c.videoThumb+'" style="width:100%;height:160px;object-fit:cover;display:block;"/>'):('<div style="height:160px;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;font-size:3rem;">🎬</div>');
-    body='<div style="border:2px solid #22C55E;border-radius:.75rem;overflow:hidden;"><div style="position:relative;">'+thumb+'<div style="position:absolute;top:8px;left:8px;background:#22C55E;color:white;font-size:.7rem;padding:2px 8px;border-radius:99px;font-weight:700;">✓ Vídeo</div></div><div style="display:flex;border-top:1px solid var(--border);"><button onclick="openMediaForAdsetDefault('+si+')" style="flex:1;padding:.625rem;border:none;background:transparent;color:var(--accent);font-size:.8rem;font-weight:600;cursor:pointer;border-right:1px solid var(--border);">Trocar</button><button onclick="S.adsetAds['+si+'].mediaType=\'image\';S.adsetAds['+si+'].videoId=\'\';S.adsetAds['+si+'].videoThumb=\'\';R()" style="flex:1;padding:.625rem;border:none;background:transparent;color:#EF4444;font-size:.8rem;cursor:pointer;">Remover</button></div></div>';
+    body='<div style="border:2px solid #22C55E;border-radius:.75rem;overflow:hidden;"><div style="position:relative;">'+thumb+'<div style="position:absolute;top:8px;left:8px;background:#22C55E;color:white;font-size:.7rem;padding:2px 8px;border-radius:99px;font-weight:700;">✓ Vídeo</div></div><div style="display:flex;border-top:1px solid var(--border);"><button onclick="openMediaForAdsetDefault('+si+',\''+base+'\')" style="flex:1;padding:.625rem;border:none;background:transparent;color:var(--accent);font-size:.8rem;font-weight:600;cursor:pointer;border-right:1px solid var(--border);">Trocar</button><button onclick="S.'+base+'['+si+'].mediaType=\'image\';S.'+base+'['+si+'].videoId=\'\';S.'+base+'['+si+'].videoThumb=\'\';R()" style="flex:1;padding:.625rem;border:none;background:transparent;color:#EF4444;font-size:.8rem;cursor:pointer;">Remover</button></div></div>';
   } else if(isImage){
-    body='<div style="border:2px solid #22C55E;border-radius:.75rem;overflow:hidden;"><div style="position:relative;"><img src="'+c.imageUrl+'" style="width:100%;height:160px;object-fit:cover;display:block;" onerror="this.style.display=\'none\'"/><div style="position:absolute;top:8px;left:8px;background:#22C55E;color:white;font-size:.7rem;padding:2px 8px;border-radius:99px;font-weight:700;">✓ Imagem</div></div><div style="display:flex;border-top:1px solid var(--border);"><button onclick="openMediaForAdsetDefault('+si+')" style="flex:1;padding:.625rem;border:none;background:transparent;color:var(--accent);font-size:.8rem;font-weight:600;cursor:pointer;border-right:1px solid var(--border);">Trocar</button><button onclick="S.adsetAds['+si+'].imageUrl=\'\';S.adsetAds['+si+'].imageHash=\'\';R()" style="flex:1;padding:.625rem;border:none;background:transparent;color:#EF4444;font-size:.8rem;cursor:pointer;">Remover</button></div></div>';
+    body='<div style="border:2px solid #22C55E;border-radius:.75rem;overflow:hidden;"><div style="position:relative;"><img src="'+c.imageUrl+'" style="width:100%;height:160px;object-fit:cover;display:block;" onerror="this.style.display=\'none\'"/><div style="position:absolute;top:8px;left:8px;background:#22C55E;color:white;font-size:.7rem;padding:2px 8px;border-radius:99px;font-weight:700;">✓ Imagem</div></div><div style="display:flex;border-top:1px solid var(--border);"><button onclick="openMediaForAdsetDefault('+si+',\''+base+'\')" style="flex:1;padding:.625rem;border:none;background:transparent;color:var(--accent);font-size:.8rem;font-weight:600;cursor:pointer;border-right:1px solid var(--border);">Trocar</button><button onclick="S.'+base+'['+si+'].imageUrl=\'\';S.'+base+'['+si+'].imageHash=\'\';R()" style="flex:1;padding:.625rem;border:none;background:transparent;color:#EF4444;font-size:.8rem;cursor:pointer;">Remover</button></div></div>';
   } else {
     const da=S.da;
     const hasGlobal=da.videoId||da.imageUrl;
     const hint=hasGlobal?'Ou deixe vazio para usar a mídia global':'Imagem ou vídeo';
-    body='<button onclick="openMediaForAdsetDefault('+si+')" style="width:100%;border:2px dashed var(--border);border-radius:.75rem;padding:2.5rem;display:flex;flex-direction:column;align-items:center;gap:.5rem;background:var(--bg-card);cursor:pointer;"><span style="font-size:2rem;">📁</span><p style="font-weight:600;color:var(--text-secondary);margin:0;font-size:.875rem;">Abrir Biblioteca de Mídia</p><p style="color:var(--text-muted);margin:0;font-size:.75rem;">'+hint+'</p></button>';
+    body='<button onclick="openMediaForAdsetDefault('+si+',\''+base+'\')" style="width:100%;border:2px dashed var(--border);border-radius:.75rem;padding:2.5rem;display:flex;flex-direction:column;align-items:center;gap:.5rem;background:var(--bg-card);cursor:pointer;"><span style="font-size:2rem;">📁</span><p style="font-weight:600;color:var(--text-secondary);margin:0;font-size:.875rem;">Abrir Biblioteca de Mídia</p><p style="color:var(--text-muted);margin:0;font-size:.75rem;">'+hint+'</p></button>';
   }
-  return card('Mídia Padrão do Conjunto','Usada como fallback se os anúncios individuais estiverem vazios',body);
+  return card(base==='campAds'?'Mídia Padrão da Campanha':'Mídia Padrão do Conjunto','Usada como fallback se os anúncios individuais estiverem vazios',body);
 }
 
 // Render da tela de anúncios por conjunto específico (modo editAdsPerAdset)
 // Usa o MESMO formato visual do renderS3 padrão, mas com state em S.adsetAds[si]
-function renderS3ForAdset(si){
-  ensureAdsetAds(si);
-  const c=S.adsetAds[si];
+function renderS3ForAdset(si){return renderS3ForConf(si,'adsetAds');}
+function renderS3ForCampaign(ci){return renderS3ForConf(ci,'campAds');}
+function renderS3ForConf(si,base){
+  const isCamp=base==='campAds';
+  if(!S[base])S[base]={};
+  ensureAdConf(S[base],si);
+  const c=S[base][si];
   const da=S.da; // fallback global
   // Efetivos: usa o do conjunto se preenchido, senão o global
   const effPageId=c.pageId||da.pageId;
@@ -2086,61 +2105,61 @@ function renderS3ForAdset(si){
   const finalUrl=effUrlParams?`${effLinkUrl||''}${(effLinkUrl||'').includes('?')?'&':'?'}${effUrlParams}`:effLinkUrl||'';
 
   // Header do conjunto
-  const copyFromAdset=si>0?`<button onclick="S.adsetAds[${si}]=JSON.parse(JSON.stringify(S.adsetAds[${si-1}]));R()" style="padding:.375rem .75rem;background:var(--border-light);color:#1a2440;border:1.5px solid var(--border);border-radius:.5rem;font-size:.7rem;font-weight:600;cursor:pointer;">📋 Copiar do Conj. ${si}</button>`:'';
+  const copyFromAdset=si>0?`<button onclick="S.${base}[${si}]=JSON.parse(JSON.stringify(S.${base}[${si-1}]));R()" style="padding:.375rem .75rem;background:var(--border-light);color:#1a2440;border:1.5px solid var(--border);border-radius:.5rem;font-size:.7rem;font-weight:600;cursor:pointer;">📋 Copiar ${isCamp?'da Camp.':'do Conj.'} ${si}</button>`:'';
   const headerBar=`<div style="margin-bottom:1rem;background:rgba(215,250,0,.1);border:1px solid rgba(215,250,0,.3);border-radius:.625rem;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
     <div>
       <p style="font-size:.65rem;color:var(--text-muted);margin:0;text-transform:uppercase;font-weight:700;letter-spacing:.08em;">Editando</p>
-      <p style="font-size:1rem;font-weight:800;color:#1a2440;margin:.125rem 0 0;">Conjunto ${si+1} de ${S.ns}${S.na>1?' · '+S.na+' anúncios':''}</p>
+      <p style="font-size:1rem;font-weight:800;color:#1a2440;margin:.125rem 0 0;">${isCamp?'Campanha':'Conjunto'} ${si+1} de ${isCamp?S.nc:S.ns}${S.na>1?' · '+S.na+' anúncios':''}</p>
     </div>
     ${copyFromAdset}
   </div>`;
 
-  // ── Botões "Copiar do Conj. 1" (só aparecem quando si > 0) ──
-  const copyBtnPage=si>0?`<button onclick="copyFromFirstAdset(${si},'page')" style="padding:.375rem .75rem;background:rgba(215,250,0,.15);color:#1a2440;border:1.5px solid var(--border-light);border-radius:.5rem;font-size:.7rem;font-weight:700;cursor:pointer;margin-bottom:.625rem;">📋 Copiar página do Conj. 1</button>`:'';
-  const copyBtnConfig=si>0?`<button onclick="copyFromFirstAdset(${si},'config')" style="padding:.375rem .75rem;background:rgba(215,250,0,.15);color:#1a2440;border:1.5px solid var(--border-light);border-radius:.5rem;font-size:.7rem;font-weight:700;cursor:pointer;margin-bottom:.625rem;">📋 Copiar configurações do Conj. 1</button>`:'';
-  const copyBtnCopy=si>0?`<button onclick="copyFromFirstAdset(${si},'copy')" style="padding:.375rem .75rem;background:rgba(215,250,0,.15);color:#1a2440;border:1.5px solid var(--border-light);border-radius:.5rem;font-size:.7rem;font-weight:700;cursor:pointer;margin-bottom:.625rem;">📋 Copiar copy do Conj. 1</button>`:'';
+  // ── Botões "Copiar ${isCamp?'da Camp.':'do Conj.'} 1" (só aparecem quando si > 0) ──
+  const copyBtnPage=si>0?`<button onclick="copyFromFirstAdset(${si},'page','${base}')" style="padding:.375rem .75rem;background:rgba(215,250,0,.15);color:#1a2440;border:1.5px solid var(--border-light);border-radius:.5rem;font-size:.7rem;font-weight:700;cursor:pointer;margin-bottom:.625rem;">📋 Copiar página ${isCamp?'da Camp.':'do Conj.'} 1</button>`:'';
+  const copyBtnConfig=si>0?`<button onclick="copyFromFirstAdset(${si},'config','${base}')" style="padding:.375rem .75rem;background:rgba(215,250,0,.15);color:#1a2440;border:1.5px solid var(--border-light);border-radius:.5rem;font-size:.7rem;font-weight:700;cursor:pointer;margin-bottom:.625rem;">📋 Copiar configurações ${isCamp?'da Camp.':'do Conj.'} 1</button>`:'';
+  const copyBtnCopy=si>0?`<button onclick="copyFromFirstAdset(${si},'copy','${base}')" style="padding:.375rem .75rem;background:rgba(215,250,0,.15);color:#1a2440;border:1.5px solid var(--border-light);border-radius:.5rem;font-size:.7rem;font-weight:700;cursor:pointer;margin-bottom:.625rem;">📋 Copiar copy ${isCamp?'da Camp.':'do Conj.'} 1</button>`:'';
 
   // ── Página do Facebook (igual renderS3 mas gravando em S.adsetAds[si]) ──
-  const pageCard=card('Página do Facebook','Página específica deste conjunto (vazio = usa global)',`
+  const pageCard=card('Página do Facebook',isCamp?'Página específica desta campanha (vazio = usa global)':'Página específica deste conjunto (vazio = usa global)',`
   ${copyBtnPage}
   ${S.pages.length?`
-  <select onchange="const p=S.pages.find(x=>x.id===this.value);S.adsetAds[${si}].pageId=this.value;S.adsetAds[${si}].pageName=p?p.name:'';R()"
+  <select onchange="const p=S.pages.find(x=>x.id===this.value);S.${base}[${si}].pageId=this.value;S.${base}[${si}].pageName=p?p.name:'';R()"
     style="width:100%;border:1.5px solid var(--border);border-radius:.5rem;padding:.625rem .75rem;font-size:.875rem;outline:none;background:var(--bg-card);">
     <option value="">${da.pageId?'↳ Usar página padrão ('+esc(da.pageName||da.pageId)+')':'Selecionar página...'}</option>
     ${S.pages.map(p=>`<option value="${esc(p.id)}" ${c.pageId===p.id?'selected':''}>${esc(p.name)} (${esc(p.id)})</option>`).join('')}
   </select>`:`
-  <input type="text" placeholder="Page ID (vazio = usa padrão)" value="${esc(c.pageId)}" oninput="S.adsetAds[${si}].pageId=this.value;S.adsetAds[${si}].pageName=''"
+  <input type="text" placeholder="Page ID (vazio = usa padrão)" value="${esc(c.pageId)}" oninput="S.${base}[${si}].pageId=this.value;S.${base}[${si}].pageName=''"
     style="width:100%;border:1.5px solid var(--border);border-radius:.5rem;padding:.625rem .75rem;font-size:.875rem;outline:none;"
     onfocus="this.style.borderColor='#1a2440'" onblur="this.style.borderColor='var(--border)'"/>`}
   ${c.pageId&&c.pageName?`<p style="font-size:.75rem;color:#16A34A;margin:.25rem 0 0;font-weight:600;">✓ ${esc(c.pageName)}</p>`:!c.pageId&&da.pageId?`<p style="font-size:.7rem;color:var(--text-muted);margin:.25rem 0 0;">↳ Usando padrão global: ${esc(da.pageName||da.pageId)}</p>`:''}`);
 
   // ── Configurações Globais do conjunto (URL destino, nome, CTA, URL params) ──
-  const globalCard=card('Configurações do Conjunto','URL, nome e CTA deste conjunto (vazio = usa global)',`
+  const globalCard=card(isCamp?'Configurações de Anúncio da Campanha':'Configurações do Conjunto',isCamp?'URL, nome e CTA desta campanha (vazio = usa global)':'URL, nome e CTA deste conjunto (vazio = usa global)',`
   ${copyBtnConfig}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:.875rem;">
     <div>
       <label style="display:block;font-size:.65rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.375rem;">URL de destino</label>
-      <input id="adset-${si}-url" type="text" placeholder="${da.linkUrl?'↳ Padrão: '+esc(da.linkUrl):'https://...'}" value="${esc(c.linkUrl)}" oninput="S.adsetAds[${si}].linkUrl=this.value"
+      <input id="adset-${si}-url" type="text" placeholder="${da.linkUrl?'↳ Padrão: '+esc(da.linkUrl):'https://...'}" value="${esc(c.linkUrl)}" oninput="S.${base}[${si}].linkUrl=this.value"
         style="width:100%;border:1.5px solid var(--border);border-radius:.625rem;padding:.625rem .875rem;font-size:.85rem;outline:none;background:var(--bg-card);color:var(--text-primary);"
         onfocus="this.style.borderColor='#1a2440'" onblur="this.style.borderColor='var(--border)'"/>
     </div>
     <div>
       <label style="display:block;font-size:.65rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.375rem;">Nome base do anúncio</label>
-      <input id="adset-${si}-name" type="text" placeholder="${da.name?'↳ Padrão: '+esc(da.name):'Creative_01'}" value="${esc(c.name)}" oninput="S.adsetAds[${si}].name=this.value"
+      <input id="adset-${si}-name" type="text" placeholder="${da.name?'↳ Padrão: '+esc(da.name):'Creative_01'}" value="${esc(c.name)}" oninput="S.${base}[${si}].name=this.value"
         style="width:100%;border:1.5px solid var(--border);border-radius:.625rem;padding:.625rem .875rem;font-size:.85rem;outline:none;background:var(--bg-card);color:var(--text-primary);"
         onfocus="this.style.borderColor='#1a2440'" onblur="this.style.borderColor='var(--border)'"/>
     </div>
   </div>
   <div>
     <label style="display:block;font-size:.65rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.375rem;">CTA</label>
-    <select onchange="S.adsetAds[${si}].cta=this.value" style="width:100%;border:1.5px solid var(--border);border-radius:.625rem;padding:.625rem .875rem;font-size:.85rem;outline:none;background:var(--bg-card);color:var(--text-primary);">
+    <select onchange="S.${base}[${si}].cta=this.value" style="width:100%;border:1.5px solid var(--border);border-radius:.625rem;padding:.625rem .875rem;font-size:.85rem;outline:none;background:var(--bg-card);color:var(--text-primary);">
       <option value="">${da.cta?'↳ Usar padrão ('+esc(da.cta.replace(/_/g,' '))+')':'Selecionar...'}</option>
       ${CTA_OPTIONS.map(o=>`<option value="${o}" ${c.cta===o?'selected':''}>${o.replace(/_/g,' ')}</option>`).join('')}
     </select>
   </div>
   <div>
     <label style="display:block;font-size:.65rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.375rem;">Parâmetros de URL</label>
-    <textarea id="adset-${si}-urlparams" oninput="S.adsetAds[${si}].urlParams=this.value"
+    <textarea id="adset-${si}-urlparams" oninput="S.${base}[${si}].urlParams=this.value"
       style="width:100%;border:1.5px solid var(--border);border-radius:.5rem;padding:.625rem .75rem;font-size:.8rem;font-family:monospace;outline:none;resize:none;min-height:50px;background:var(--bg-card);color:var(--text-primary);"
       onfocus="this.style.borderColor='#1a2440'" onblur="this.style.borderColor='var(--border)'"
       placeholder="${da.urlParams?'↳ Padrão: '+esc(da.urlParams).slice(0,80):'utm_source=facebook&...'}">${esc(c.urlParams||'')}</textarea>
@@ -2148,35 +2167,35 @@ function renderS3ForAdset(si){
   </div>`);
 
   // ── Mídia Padrão do conjunto (usa helper sem template aninhado) ──
-  const mediaCard=renderAdsetMediaCard(si,c);
+  const mediaCard=renderAdsetMediaCard(si,c,base);
 
   // ── Copy Padrão do conjunto ──
-  const copyCard=card('Copy Padrão do Conjunto','Texto e headline para este conjunto (vazio = usa global)',`
+  const copyCard=card(isCamp?'Copy Padrão da Campanha':'Copy Padrão do Conjunto','Texto e headline '+(isCamp?'para esta campanha':'para este conjunto')+' (vazio = usa global)',`
   ${copyBtnCopy}
   <div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.375rem;">
       <label style="font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;">Texto Principal</label>
-      <button onclick="S.adsetAds[${si}].primaryTexts=[...S.adsetAds[${si}].primaryTexts,''];R()" style="font-size:.75rem;color:var(--accent);background:transparent;border:none;cursor:pointer;font-weight:600;">+ Variação</button>
+      <button onclick="S.${base}[${si}].primaryTexts=[...S.${base}[${si}].primaryTexts,''];R()" style="font-size:.75rem;color:var(--accent);background:transparent;border:none;cursor:pointer;font-weight:600;">+ Variação</button>
     </div>
     ${c.primaryTexts.map((t,i)=>`
     <div style="display:flex;gap:.5rem;margin-bottom:.5rem;">
-      <textarea id="adset-${si}-pt-${i}" oninput="S.adsetAds[${si}].primaryTexts[${i}]=this.value"
+      <textarea id="adset-${si}-pt-${i}" oninput="S.${base}[${si}].primaryTexts[${i}]=this.value"
         style="flex:1;border:1.5px solid var(--border);border-radius:.5rem;padding:.625rem .75rem;font-size:.875rem;outline:none;resize:none;min-height:60px;background:var(--bg-card);color:var(--text-primary);"
         onfocus="this.style.borderColor='#1a2440'" onblur="this.style.borderColor='var(--border)'" placeholder="${i===0&&da.primaryTexts?.[0]?'↳ Padrão: '+esc(da.primaryTexts[0]).slice(0,60):'Texto principal...'}">${esc(t)}</textarea>
-      ${c.primaryTexts.length>1?`<button onclick="S.adsetAds[${si}].primaryTexts=S.adsetAds[${si}].primaryTexts.filter((_,j)=>j!==${i});R()" style="color:#EF4444;background:transparent;border:none;cursor:pointer;font-size:1.25rem;align-self:start;padding-top:4px;">×</button>`:''}
+      ${c.primaryTexts.length>1?`<button onclick="S.${base}[${si}].primaryTexts=S.${base}[${si}].primaryTexts.filter((_,j)=>j!==${i});R()" style="color:#EF4444;background:transparent;border:none;cursor:pointer;font-size:1.25rem;align-self:start;padding-top:4px;">×</button>`:''}
     </div>`).join('')}
   </div>
   <div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.375rem;">
       <label style="font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;">Headline</label>
-      <button onclick="S.adsetAds[${si}].headlines=[...S.adsetAds[${si}].headlines,''];R()" style="font-size:.75rem;color:var(--accent);background:transparent;border:none;cursor:pointer;font-weight:600;">+ Variação</button>
+      <button onclick="S.${base}[${si}].headlines=[...S.${base}[${si}].headlines,''];R()" style="font-size:.75rem;color:var(--accent);background:transparent;border:none;cursor:pointer;font-weight:600;">+ Variação</button>
     </div>
     ${c.headlines.map((t,i)=>`
     <div style="display:flex;gap:.5rem;margin-bottom:.5rem;">
-      <input id="adset-${si}-hl-${i}" value="${esc(t)}" oninput="S.adsetAds[${si}].headlines[${i}]=this.value"
+      <input id="adset-${si}-hl-${i}" value="${esc(t)}" oninput="S.${base}[${si}].headlines[${i}]=this.value"
         style="flex:1;border:1.5px solid var(--border);border-radius:.5rem;padding:.625rem .75rem;font-size:.875rem;outline:none;background:var(--bg-card);color:var(--text-primary);"
         onfocus="this.style.borderColor='#1a2440'" onblur="this.style.borderColor='var(--border)'" placeholder="${i===0&&da.headlines?.[0]?'↳ Padrão: '+esc(da.headlines[0]).slice(0,60):'Headline'}"/>
-      ${c.headlines.length>1?`<button onclick="S.adsetAds[${si}].headlines=S.adsetAds[${si}].headlines.filter((_,j)=>j!==${i});R()" style="color:#EF4444;background:transparent;border:none;cursor:pointer;font-size:1.25rem;align-self:center;">×</button>`:''}
+      ${c.headlines.length>1?`<button onclick="S.${base}[${si}].headlines=S.${base}[${si}].headlines.filter((_,j)=>j!==${i});R()" style="color:#EF4444;background:transparent;border:none;cursor:pointer;font-size:1.25rem;align-self:center;">×</button>`:''}
     </div>`).join('')}
   </div>`);
 
@@ -2191,32 +2210,32 @@ function renderS3ForAdset(si){
 
     adLevelCardLocal=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:1rem;">
       <div style="padding:.875rem 1.25rem;border-bottom:1px solid var(--border);background:var(--border-light);">
-        <p style="font-weight:600;font-size:.875rem;color:var(--text-primary);margin:0;">Anúncios do Conjunto ${si+1} (${S.na} anúncios)</p>
-        <p style="font-size:.7rem;color:var(--text-muted);margin:.125rem 0 0;">Como a mídia e copy serão distribuídas entre os ${S.na} anúncios deste conjunto</p>
+        <p style="font-weight:600;font-size:.875rem;color:var(--text-primary);margin:0;">Anúncios ${isCamp?'da Campanha':'do Conjunto'} ${si+1} (${S.na} anúncios)</p>
+        <p style="font-size:.7rem;color:var(--text-muted);margin:.125rem 0 0;">Como a mídia e copy serão distribuídas entre os ${S.na} anúncios ${isCamp?'desta campanha':'deste conjunto'}</p>
       </div>
       <div style="padding:1rem;">
         <p style="font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 .5rem;">Mídia por Anúncio</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.75rem;">
-          <button onclick="S.adsetAds[${si}].adMediaMode='single';R()" style="padding:.625rem;border-radius:.5rem;border:2px solid ${adMediaM==='single'?'#1a2440':'var(--border)'};background:${adMediaM==='single'?'rgba(215,250,0,.15)':'var(--bg-card)'};cursor:pointer;text-align:left;">
+          <button onclick="S.${base}[${si}].adMediaMode='single';R()" style="padding:.625rem;border-radius:.5rem;border:2px solid ${adMediaM==='single'?'#1a2440':'var(--border)'};background:${adMediaM==='single'?'rgba(215,250,0,.15)':'var(--bg-card)'};cursor:pointer;text-align:left;">
             <p style="font-size:.75rem;font-weight:700;color:#1a2440;margin:0;">📌 Mesmo criativo</p>
             <p style="font-size:.65rem;color:var(--text-secondary);margin:.125rem 0 0;">Todos os ${S.na} anúncios usam a mesma mídia (do card acima)</p>
           </button>
-          <button onclick="S.adsetAds[${si}].adMediaMode='per_ad';S.adsetAds[${si}].adCreatives=Array.from({length:S.na},(_,i)=>S.adsetAds[${si}].adCreatives[i]||null);R()" style="padding:.625rem;border-radius:.5rem;border:2px solid ${adMediaM==='per_ad'?'#1a2440':'var(--border)'};background:${adMediaM==='per_ad'?'rgba(215,250,0,.15)':'var(--bg-card)'};cursor:pointer;text-align:left;">
+          <button onclick="S.${base}[${si}].adMediaMode='per_ad';S.${base}[${si}].adCreatives=Array.from({length:S.na},(_,i)=>S.${base}[${si}].adCreatives[i]||null);R()" style="padding:.625rem;border-radius:.5rem;border:2px solid ${adMediaM==='per_ad'?'#1a2440':'var(--border)'};background:${adMediaM==='per_ad'?'rgba(215,250,0,.15)':'var(--bg-card)'};cursor:pointer;text-align:left;">
             <p style="font-size:.75rem;font-weight:700;color:#1a2440;margin:0;">🎨 Criativo diferente</p>
             <p style="font-size:.65rem;color:var(--text-secondary);margin:.125rem 0 0;">1 mídia diferente por anúncio</p>
           </button>
         </div>
         ${adMediaM==='per_ad'?`
-        <button onclick="openMediaForAdsetAds(${si})" style="width:100%;padding:.625rem;border:2px dashed ${adAssigned?'var(--border-light)':'var(--border)'};border-radius:.625rem;background:${adAssigned?'rgba(215,250,0,.1)':'var(--bg-card)'};color:${adAssigned?'#1a2440':'var(--text-secondary)'};font-weight:700;font-size:.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:.5rem;">📁 Selecionar ${S.na} mídias de uma vez</button>
+        <button onclick="openMediaForAdsetAds(${si},'${base}')" style="width:100%;padding:.625rem;border:2px dashed ${adAssigned?'var(--border-light)':'var(--border)'};border-radius:.625rem;background:${adAssigned?'rgba(215,250,0,.1)':'var(--bg-card)'};color:${adAssigned?'#1a2440':'var(--text-secondary)'};font-weight:700;font-size:.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;margin-bottom:.5rem;">📁 Selecionar ${S.na} mídias de uma vez</button>
         ${adAssigned?`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.375rem;">
           <span style="font-size:.65rem;color:var(--text-secondary);">${adAssigned}/${S.na} atribuídos</span>
-          <button onclick="S.adsetAds[${si}].adCreatives=Array.from({length:S.na},()=>null);R()" style="font-size:.65rem;color:#EF4444;background:transparent;border:none;cursor:pointer;">Limpar</button>
+          <button onclick="S.${base}[${si}].adCreatives=Array.from({length:S.na},()=>null);R()" style="font-size:.65rem;color:#EF4444;background:transparent;border:none;cursor:pointer;">Limpar</button>
         </div>`:''}
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:.375rem;">
           ${Array.from({length:S.na},(_,ai)=>{
             const ac=c.adCreatives[ai];const has=ac&&(ac.videoId||ac.imageUrl||ac.imageHash);
             return `<div style="border:1.5px solid ${has?'var(--border-light)':'var(--border)'};border-radius:.5rem;overflow:hidden;">
-              <div onclick="openMediaForAdsetIndexAd(${si},${ai})" style="height:48px;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;">
+              <div onclick="openMediaForAdsetIndexAd(${si},${ai},'${base}')" style="height:48px;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;">
                 ${has&&ac.videoThumb?`<img src="${ac.videoThumb}" style="width:100%;height:100%;object-fit:cover;"/>`:has&&ac.imageUrl?`<img src="${ac.imageUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'"/>`:has?'<span style="font-size:1rem;">🎬</span>':'<span style="color:var(--text-muted);">+</span>'}
               </div>
               <p style="font-size:.5rem;font-weight:700;color:${has?'#1a2440':'var(--text-muted)'};margin:0;text-align:center;padding:.125rem;">Ad ${ai+1}</p>
@@ -2228,11 +2247,11 @@ function renderS3ForAdset(si){
         <div style="border-top:1px solid var(--border);padding-top:.75rem;">
           <p style="font-size:.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;margin:0 0 .5rem;">Copy por Anúncio</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.75rem;">
-            <button onclick="S.adsetAds[${si}].adCopyMode='single';R()" style="padding:.625rem;border-radius:.5rem;border:2px solid ${adCopyM==='single'?'#1a2440':'var(--border)'};background:${adCopyM==='single'?'rgba(215,250,0,.15)':'var(--bg-card)'};cursor:pointer;text-align:left;">
+            <button onclick="S.${base}[${si}].adCopyMode='single';R()" style="padding:.625rem;border-radius:.5rem;border:2px solid ${adCopyM==='single'?'#1a2440':'var(--border)'};background:${adCopyM==='single'?'rgba(215,250,0,.15)':'var(--bg-card)'};cursor:pointer;text-align:left;">
               <p style="font-size:.75rem;font-weight:700;color:#1a2440;margin:0;">📌 Mesmo texto</p>
               <p style="font-size:.65rem;color:var(--text-secondary);margin:.125rem 0 0;">Usa o texto/headline do card acima</p>
             </button>
-            <button onclick="S.adsetAds[${si}].adCopyMode='per_ad';S.adsetAds[${si}].adCopies=Array.from({length:S.na},(_,i)=>S.adsetAds[${si}].adCopies[i]||{primaryText:'',headline:''});R()" style="padding:.625rem;border-radius:.5rem;border:2px solid ${adCopyM==='per_ad'?'#1a2440':'var(--border)'};background:${adCopyM==='per_ad'?'rgba(215,250,0,.15)':'var(--bg-card)'};cursor:pointer;text-align:left;">
+            <button onclick="S.${base}[${si}].adCopyMode='per_ad';S.${base}[${si}].adCopies=Array.from({length:S.na},(_,i)=>S.${base}[${si}].adCopies[i]||{primaryText:'',headline:''});R()" style="padding:.625rem;border-radius:.5rem;border:2px solid ${adCopyM==='per_ad'?'#1a2440':'var(--border)'};background:${adCopyM==='per_ad'?'rgba(215,250,0,.15)':'var(--bg-card)'};cursor:pointer;text-align:left;">
               <p style="font-size:.75rem;font-weight:700;color:#1a2440;margin:0;">✏️ Texto diferente</p>
               <p style="font-size:.65rem;color:var(--text-secondary);margin:.125rem 0 0;">Texto e headline por anúncio</p>
             </button>
@@ -2244,10 +2263,10 @@ function renderS3ForAdset(si){
                 <div style="display:flex;align-items:center;gap:.375rem;margin-bottom:.375rem;">
                   <span style="font-size:.6rem;font-weight:700;background:rgba(215,250,0,.15);color:#1a2440;padding:.125rem .375rem;border-radius:99px;">Ad ${ai+1}</span>
                 </div>
-                <textarea id="adset-${si}-adcp-${ai}-pt" oninput="if(!S.adsetAds[${si}].adCopies[${ai}])S.adsetAds[${si}].adCopies[${ai}]={primaryText:'',headline:''};S.adsetAds[${si}].adCopies[${ai}].primaryText=this.value"
+                <textarea id="adset-${si}-adcp-${ai}-pt" oninput="if(!S.${base}[${si}].adCopies[${ai}])S.${base}[${si}].adCopies[${ai}]={primaryText:'',headline:''};S.${base}[${si}].adCopies[${ai}].primaryText=this.value"
                   style="width:100%;border:1px solid var(--border);border-radius:.375rem;padding:.375rem .5rem;font-size:.75rem;outline:none;resize:none;height:50px;margin-bottom:.25rem;background:var(--bg-card);color:var(--text-primary);"
                   onfocus="this.style.borderColor='#1a2440'" onblur="this.style.borderColor='var(--border)'" placeholder="Texto principal...">${esc(cp.primaryText)}</textarea>
-                <input id="adset-${si}-adcp-${ai}-hl" value="${esc(cp.headline)}" oninput="if(!S.adsetAds[${si}].adCopies[${ai}])S.adsetAds[${si}].adCopies[${ai}]={primaryText:'',headline:''};S.adsetAds[${si}].adCopies[${ai}].headline=this.value"
+                <input id="adset-${si}-adcp-${ai}-hl" value="${esc(cp.headline)}" oninput="if(!S.${base}[${si}].adCopies[${ai}])S.${base}[${si}].adCopies[${ai}]={primaryText:'',headline:''};S.${base}[${si}].adCopies[${ai}].headline=this.value"
                   style="width:100%;border:1px solid var(--border);border-radius:.375rem;padding:.375rem .5rem;font-size:.75rem;outline:none;background:var(--bg-card);color:var(--text-primary);"
                   onfocus="this.style.borderColor='#1a2440'" onblur="this.style.borderColor='var(--border)'" placeholder="Headline..."/>
               </div>`;
@@ -2399,7 +2418,7 @@ function renderS4() {
     ${[
       {label:'Campanha',rows:[['Campanhas',S.nc],['Objetivo',OBJECTIVES.find(o=>o.id===S.cc.objective)?.label],['Status',S.cc.status],['Modo creative',mode==='single'?'📌 Único':mode==='per_adset'?'📦 Por conjunto':mode==='per_campaign_adset'?'🎯 Matriz':'🎨 Por campanha']]},
       {label:'Conjunto',rows:[['Por campanha',S.ns],['Total',(S.nc*S.ns).toLocaleString()],['Nomes',esc((S.adsetNames||[]).slice(0,2).join(', ')+(S.ns>2?' …':''))],['Países',esc(S.ds.countries)]]},
-      {label:'Anúncio',rows:[['Por conjunto',S.na],['Total',(S.nc*S.ns*S.na).toLocaleString()],['Mídia',da.mediaType==='video'?'🎬 Vídeo':'🖼 Imagem'],['Página',S.pageMode==='per_campaign'&&S.nc>1?'📄 Por campanha':esc(da.pageName||da.pageId||'—')]]},
+      {label:'Anúncio',rows:[['Por conjunto',S.na],['Total',(S.nc*S.ns*S.na).toLocaleString()],...(S.editAdsPerCampaign&&S.nc>1?[['Modo','✏️ Por campanha']]:S.editAdsPerAdset&&S.ns>1?[['Modo','✏️ Por conjunto']]:[]),['Mídia',da.mediaType==='video'?'🎬 Vídeo':'🖼 Imagem'],['Página',S.pageMode==='per_campaign'&&S.nc>1?'📄 Por campanha':esc(da.pageName||da.pageId||'—')]]},
     ].map(sec=>`
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1rem;box-shadow:0 1px 3px rgba(0,0,0,.05);">
       <p style="font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 .75rem;">${sec.label}</p>
@@ -3110,9 +3129,9 @@ function openMediaForCampAdsetAd(ci,si,ai) {
   _openMediaModal();
 }
 // Modo editAdsPerAdset: um conjunto tem N anúncios editáveis
-function openMediaForAdsetAds(si){
-  // Bulk N mídias distribuídas em adCreatives do conjunto si
-  S.mediaSelectTarget={type:'adset_ads_bulk',si};
+function openMediaForAdsetAds(si,base='adsetAds'){
+  // Bulk N mídias distribuídas em adCreatives do conjunto/campanha si
+  S.mediaSelectTarget={type:'adset_ads_bulk',si,base};
   mediaFolder=null;mediaSearch='';mediaMultiSelect=true;mediaSelected=[];
   _openMediaModal();
 }
@@ -3122,15 +3141,15 @@ function openMediaForAdsetAd(si,ai){
   mediaFolder=null;mediaSearch='';mediaMultiSelect=false;mediaSelected=[];
   _openMediaModal();
 }
-function openMediaForAdsetDefault(si){
-  // Mídia padrão do conjunto (grava em S.adsetAds[si] direto)
-  S.mediaSelectTarget={type:'adset_default',si};
+function openMediaForAdsetDefault(si,base='adsetAds'){
+  // Mídia padrão do conjunto/campanha (grava em S[base][si] direto)
+  S.mediaSelectTarget={type:'adset_default',si,base};
   mediaFolder=null;mediaSearch='';mediaMultiSelect=false;mediaSelected=[];
   _openMediaModal();
 }
-function openMediaForAdsetIndexAd(si,ai){
-  // Mídia de um anúncio específico no adCreatives do conjunto si
-  S.mediaSelectTarget={type:'adset_adcr',si,ai};
+function openMediaForAdsetIndexAd(si,ai,base='adsetAds'){
+  // Mídia de um anúncio específico no adCreatives do conjunto/campanha si
+  S.mediaSelectTarget={type:'adset_adcr',si,ai,base};
   mediaFolder=null;mediaSearch='';mediaMultiSelect=false;mediaSelected=[];
   _openMediaModal();
 }
@@ -3175,13 +3194,13 @@ function confirmMultiSelect() {
     }
     closeMedia();toast(`${mediaSelected.length} mídia(s) distribuídas em ${S.na} anúncios do Conj. ${si+1}`,'success');R();
   } else if(target&&typeof target==='object'&&target.type==='adset_ads_bulk'){
-    // Modo editAdsPerAdset: bulk nos adCreatives[ai] do conjunto si
-    const si=target.si;ensureAdsetAds(si);
-    S.adsetAds[si].adCreatives=Array.from({length:S.na},(_,ai)=>{
+    // Bulk nos adCreatives[ai] do conjunto/campanha si
+    const si=target.si;const _st=S[target.base||'adsetAds']=S[target.base||'adsetAds']||{};ensureAdConf(_st,si);
+    _st[si].adCreatives=Array.from({length:S.na},(_,ai)=>{
       const m=mediaSelected[ai%mediaSelected.length];
       return m?makeCr(m):null;
     });
-    closeMedia();toast(`${mediaSelected.length} mídia(s) distribuídas em ${S.na} anúncios do Conj. ${si+1}`,'success');R();
+    closeMedia();toast(`${mediaSelected.length} mídia(s) distribuídas em ${S.na} anúncios ${target.base==='campAds'?'da Camp.':'do Conj.'} ${si+1}`,'success');R();
   } else {
     S.adsetCreatives=Array.from({length:S.ns},(_,i)=>{const m=mediaSelected[i%mediaSelected.length];return m?makeCr(m):null;});
     closeMedia();toast(`${mediaSelected.length} mídia(s) distribuídas em ${S.ns} conjuntos`,'success');R();
@@ -3439,14 +3458,14 @@ function selectMedia(type,id,urlOrThumb,titleOrHash) {
     S.mediaSelectTarget=null;closeMedia();R();return;
   }
   if(target&&typeof target==='object'&&target.type==='adset_default'){
-    const {si}=target;ensureAdsetAds(si);const c=S.adsetAds[si];
+    const {si}=target;const _st=S[target.base||'adsetAds']=S[target.base||'adsetAds']||{};ensureAdConf(_st,si);const c=_st[si];
     if(type==='video'){c.mediaType='video';c.videoId=id;c.videoThumb=urlOrThumb;c.videoTitle=titleOrHash;c.imageUrl='';c.imageHash='';}
     else{c.mediaType='image';c.imageUrl=urlOrThumb;c.imageHash=titleOrHash;c.videoId='';c.videoThumb='';}
     S.mediaSelectTarget=null;closeMedia();R();return;
   }
   if(target&&typeof target==='object'&&target.type==='adset_adcr'){
-    const {si,ai}=target;ensureAdsetAds(si);
-    S.adsetAds[si].adCreatives[ai]=type==='video'
+    const {si,ai}=target;const _st=S[target.base||'adsetAds']=S[target.base||'adsetAds']||{};ensureAdConf(_st,si);
+    _st[si].adCreatives[ai]=type==='video'
       ?{mediaType:'video',videoId:id,videoThumb:urlOrThumb,imageUrl:'',imageHash:''}
       :{mediaType:'image',imageUrl:urlOrThumb,imageHash:titleOrHash,videoId:'',videoThumb:''};
     S.mediaSelectTarget=null;closeMedia();R();return;
@@ -3578,7 +3597,19 @@ function validateStepType(info){
     }
   }
   if(info.type==='anuncio'){
-    if(S.editAdsPerAdset&&S.ns>1){
+    if(S.editAdsPerCampaign&&S.nc>1&&info.campIdx>=0){
+      // Modo por campanha: valida APENAS a campanha atual
+      const ci=info.campIdx;
+      const c=(S.campAds||{})[ci]||{};
+      const pageOk=c.pageId||S.da.pageId||(S.pageMode==='per_campaign'&&S.nc>1&&S.campaignPages[ci]);
+      if(!pageOk)errs.push('Camp. '+(ci+1)+': selecione uma Página (ou defina uma padrão global).');
+      const url=c.linkUrl||S.da.linkUrl;
+      if(!url||!url.startsWith('http'))errs.push('Camp. '+(ci+1)+': URL de destino inválida.');
+      const hasTextInCamp=(c.primaryTexts||[]).some(t=>t&&t.trim());
+      const hasTextInAds=(c.adCopyMode==='per_ad')&&(c.adCopies||[]).some(a=>a&&a.primaryText&&a.primaryText.trim());
+      const hasTextGlobal=S.da.primaryTexts.some(t=>t&&t.trim());
+      if(!hasTextInCamp&&!hasTextInAds&&!hasTextGlobal)errs.push('Camp. '+(ci+1)+': pelo menos um texto principal é obrigatório.');
+    } else if(S.editAdsPerAdset&&S.ns>1){
       // Modo por conjunto: valida APENAS o conjunto atual
       const si=info.adsetIdx;
       const c=S.adsetAds[si]||{};
@@ -4209,7 +4240,7 @@ async function openSubAdsetWizard(cid,adCount=1,adsetCount=1){
     adCreatives:[...S.adCreatives],
     adCopies:[...S.adCopies],
     creativeMode:S.creativeMode,adMediaMode:S.adMediaMode,adCopyMode:S.adCopyMode,
-    pageMode:S.pageMode,editAdsPerAdset:S.editAdsPerAdset,adsetAds:S.adsetAds,
+    pageMode:S.pageMode,editAdsPerAdset:S.editAdsPerAdset,adsetAds:S.adsetAds,editAdsPerCampaign:S.editAdsPerCampaign,campAds:S.campAds,
     campAdsetCreatives:JSON.parse(JSON.stringify(S.campAdsetCreatives||{})),
   };
   // Configurar contexto isolado para novo conjunto (na = quantidade escolhida no popup)
@@ -4221,8 +4252,8 @@ async function openSubAdsetWizard(cid,adCount=1,adsetCount=1){
   S.adCreatives=Array.from({length:na},()=>null);
   S.adCopies=Array.from({length:na},()=>({primaryText:'',headline:''}));
   S.creativeMode='single';S.adMediaMode='single';S.adCopyMode='single';
-  S.pageMode='single';S.editAdsPerAdset=false;
-  S.adsetAds={};S.campAdsetCreatives={};
+  S.pageMode='single';S.editAdsPerAdset=false;S.editAdsPerCampaign=false;
+  S.adsetAds={};S.campAds={};S.campAdsetCreatives={};
   // Puxa configurações da campanha
   S.cc={
     objective:c.objective||'OUTCOME_SALES',
@@ -4270,7 +4301,7 @@ function closeSubAdsetWizard(){
     S.campaignPages=snap.campaignPages;S.adsetCreatives=snap.adsetCreatives;
     S.adCreatives=snap.adCreatives;S.adCopies=snap.adCopies;
     S.creativeMode=snap.creativeMode;S.adMediaMode=snap.adMediaMode;S.adCopyMode=snap.adCopyMode;
-    S.pageMode=snap.pageMode;S.editAdsPerAdset=snap.editAdsPerAdset;S.adsetAds=snap.adsetAds;
+    S.pageMode=snap.pageMode;S.editAdsPerAdset=snap.editAdsPerAdset;S.adsetAds=snap.adsetAds;S.editAdsPerCampaign=snap.editAdsPerCampaign||false;S.campAds=snap.campAds||{};
     S.campAdsetCreatives=snap.campAdsetCreatives;
   }
   const cid=S.campaignEditor.subWizard?.campaignId;
@@ -4396,13 +4427,16 @@ function plog(m,t='info'){
 function validatePubStructure(){
   const errs=[];
   const usingPerAdset=S.editAdsPerAdset&&S.ns>1;
+  const usingPerCamp=S.editAdsPerCampaign&&S.nc>1;
   const effPageForAdset=(si,ci)=>{
     if(usingPerAdset&&S.adsetAds[si]?.pageId)return S.adsetAds[si].pageId;
+    if(usingPerCamp&&S.campAds?.[ci]?.pageId)return S.campAds[ci].pageId;
     if(S.pageMode==='per_campaign'&&S.nc>1&&S.campaignPages[ci])return S.campaignPages[ci];
     return S.da.pageId;
   };
-  const effUrlForAdset=(si)=>{
+  const effUrlForAdset=(si,ci)=>{
     if(usingPerAdset&&S.adsetAds[si]?.linkUrl)return S.adsetAds[si].linkUrl;
+    if(usingPerCamp&&S.campAds?.[ci]?.linkUrl)return S.campAds[ci].linkUrl;
     return S.da.linkUrl;
   };
   let pageErrCount=0,urlErrCount=0;
@@ -4410,7 +4444,7 @@ function validatePubStructure(){
     for(let si=0;si<S.ns;si++){
       const p=effPageForAdset(si,ci);
       if(!p){pageErrCount++;if(pageErrCount<=3)errs.push(`Conj. ${si+1}${S.nc>1?' da Camp. '+(ci+1):''}: sem página definida.`);}
-      const u=effUrlForAdset(si);
+      const u=effUrlForAdset(si,ci);
       if(!u||!u.startsWith('http')){urlErrCount++;if(urlErrCount<=3)errs.push(`Conj. ${si+1}${S.nc>1?' da Camp. '+(ci+1):''}: URL de destino inválida.`);}
     }
   }
@@ -4421,7 +4455,7 @@ function validatePubStructure(){
 }
 // Todos os Page IDs efetivos usados (global, por campanha, por conjunto)
 function allEffectivePageIds(){
-  return [...new Set([S.da.pageId,...(S.campaignPages||[]),...Object.values(S.adsetAds||{}).map(c=>c?.pageId)].filter(Boolean))];
+  return [...new Set([S.da.pageId,...(S.campaignPages||[]),...Object.values(S.adsetAds||{}).map(c=>c?.pageId),...Object.values(S.campAds||{}).map(c=>c?.pageId)].filter(Boolean))];
 }
 // Cria conjuntos + criativos + anúncios para as campanhas `cids` (IDs já existentes).
 // Usa exatamente a mesma hierarquia de mídia/copy/página do lançamento em massa.
@@ -4486,7 +4520,7 @@ async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FAS
 
   // Pre-fetch video thumbnails for all unique video IDs used
   const adsetAdsVids=[];
-  Object.values(S.adsetAds||{}).forEach(c=>{
+  [...Object.values(S.adsetAds||{}),...Object.values(S.campAds||{})].forEach(c=>{
     if(c?.videoId)adsetAdsVids.push(c.videoId);
     (c?.adCreatives||[]).forEach(a=>{if(a?.videoId)adsetAdsVids.push(a.videoId);});
     (c?.ads||[]).forEach(a=>{if(a?.videoId)adsetAdsVids.push(a.videoId);});
@@ -4501,6 +4535,7 @@ async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FAS
   }
 
   const editPerAdset=S.editAdsPerAdset&&S.ns>1; // wizards separados por conjunto
+  const editPerCamp=S.editAdsPerCampaign&&S.nc>1; // wizards separados por campanha
   const perAdMedia=S.adMediaMode==='per_ad'&&na>1;
   const perAdCopy=S.adCopyMode==='per_ad'&&na>1;
   const matrixPerAd=mode==='per_campaign_adset'&&na>1; // matriz com granularidade por anúncio
@@ -4508,11 +4543,11 @@ async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FAS
   aids.forEach((id,i)=>{
     if(!id)return;
     const {ci,si}=am[i],cleanUrl=da.linkUrl;
-    const adCount=(perAdMedia||perAdCopy||matrixPerAd||editPerAdset)?na:1;
+    const adCount=(perAdMedia||perAdCopy||matrixPerAd||editPerAdset||editPerCamp)?na:1;
 
     for(let a=0;a<adCount;a++){
-      // Modo editPerAdset: state completo em S.adsetAds[si]
-      const adsetConf=editPerAdset?S.adsetAds[si]:null;
+      // Conf ativa: por conjunto (S.adsetAds[si]) ou por campanha (S.campAds[ci]) — mutuamente exclusivas
+      const adsetConf=editPerAdset?S.adsetAds[si]:(editPerCamp?(S.campAds||{})[ci]:null);
       const asAdCr=adsetConf?.adCreatives?.[a]; // mídia por anúncio (dentro do conjunto)
       const asAdCp=adsetConf?.adCopies?.[a];    // copy por anúncio (dentro do conjunto)
       // Resolve matrix cell per ad when applicable
@@ -4564,20 +4599,20 @@ async function publishAdsetsAndAds(cids,{log=plog,bump=()=>{},phaseLabel=n=>`FAS
     const p=parseBatch(r);
     const {ai,ci,si,adIdx}=crm[idx];
     if(!p.error){
-      if(perAdMedia||perAdCopy||matrixPerAd||editPerAdset){
+      if(perAdMedia||perAdCopy||matrixPerAd||editPerAdset||editPerCamp){
         if(!crid_multi[ai])crid_multi[ai]=[];
         crid_multi[ai][adIdx]=p.id;
       }else{
         crid[ai]=p.id;
       }
-    }else{plog(`  ✗ Creative C${ci+1}S${si+1}${(perAdMedia||perAdCopy||matrixPerAd||editPerAdset)?'A'+(adIdx+1):''}: ${p.error.message}`,'error');errList.push(`Criativo S${si+1}${(perAdMedia||perAdCopy||matrixPerAd||editPerAdset)?'A'+(adIdx+1):''}: ${p.error.message}`);}
+    }else{plog(`  ✗ Creative C${ci+1}S${si+1}${(perAdMedia||perAdCopy||matrixPerAd||editPerAdset||editPerCamp)?'A'+(adIdx+1):''}: ${p.error.message}`,'error');errList.push(`Criativo S${si+1}${(perAdMedia||perAdCopy||matrixPerAd||editPerAdset||editPerCamp)?'A'+(adIdx+1):''}: ${p.error.message}`);}
   });
   plog(`  ${Object.keys(crid).length+Object.keys(crid_multi).length} adsets com criativos criados`,'info');
   if(stopPub)throw new Error('stop');
 
   plog(`━━ ${phaseLabel(4)} — anúncios`,'loading');
   const aq=[];
-  if(perAdMedia||perAdCopy||matrixPerAd||editPerAdset){
+  if(perAdMedia||perAdCopy||matrixPerAd||editPerAdset||editPerCamp){
     // Each ad gets its own creative
     Object.entries(crid_multi).forEach(([ai,crIds])=>{
       const adid=aids[+ai],{ci,si}=am[+ai];
