@@ -68,7 +68,7 @@ body.dark ::-webkit-scrollbar-thumb { background: #2a3a56; }
 <div id="app"></div>
 <div id="toast-container"></div>
 <script>
-const APP_VERSION='v14.10-1';
+const APP_VERSION='v14.10-2';
 console.log('HyperAds '+APP_VERSION);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -2106,12 +2106,25 @@ function renderS3ForConf(si,base){
 
   // Header do conjunto
   const copyFromAdset=si>0?`<button onclick="S.${base}[${si}]=JSON.parse(JSON.stringify(S.${base}[${si-1}]));R()" style="padding:.375rem .75rem;background:var(--border-light);color:#1a2440;border:1.5px solid var(--border);border-radius:.5rem;font-size:.7rem;font-weight:600;cursor:pointer;">📋 Copiar ${isCamp?'da Camp.':'do Conj.'} ${si}</button>`:'';
-  const headerBar=`<div style="margin-bottom:1rem;background:rgba(215,250,0,.1);border:1px solid rgba(215,250,0,.3);border-radius:.625rem;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
-    <div>
-      <p style="font-size:.65rem;color:var(--text-muted);margin:0;text-transform:uppercase;font-weight:700;letter-spacing:.08em;">Editando</p>
-      <p style="font-size:1rem;font-weight:800;color:#1a2440;margin:.125rem 0 0;">${isCamp?'Campanha':'Conjunto'} ${si+1} de ${isCamp?S.nc:S.ns}${S.na>1?' · '+S.na+' anúncios':''}</p>
+  // Referência: a qual campanha/conjunto esta janela pertence (por nome)
+  ensureAdsetNames();
+  const _campVal=isCamp?(S.campNames[si]||('Campanha '+(si+1))):((S.campNames||[]).filter(Boolean).join(', ')||'—');
+  const _campLbl=isCamp?'📣 Campanha':(S.nc>1?'📣 Campanhas (todas as '+S.nc+')':'📣 Campanha');
+  const _conjVal=isCamp?((S.adsetNames||[]).filter(Boolean).join(', ')||'—'):((S.adsetNames||[])[si]||('Conjunto '+(si+1)));
+  const _conjLbl=isCamp?(S.ns>1?'📦 Conjuntos (todos os '+S.ns+')':'📦 Conjunto'):'📦 Conjunto';
+  const _refChip=(lbl,val)=>`<span style="display:inline-flex;align-items:baseline;gap:.375rem;background:rgba(26,36,64,.07);border:1px solid rgba(26,36,64,.15);border-radius:99px;padding:.2rem .75rem;max-width:100%;overflow:hidden;"><span style="font-size:.6rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;">${lbl}</span><span style="font-size:.75rem;font-weight:700;color:#1a2440;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(val)}</span></span>`;
+  const headerBar=`<div style="margin-bottom:1rem;background:rgba(215,250,0,.1);border:1px solid rgba(215,250,0,.3);border-radius:.625rem;padding:.75rem 1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+      <div>
+        <p style="font-size:.65rem;color:var(--text-muted);margin:0;text-transform:uppercase;font-weight:700;letter-spacing:.08em;">Editando</p>
+        <p style="font-size:1rem;font-weight:800;color:#1a2440;margin:.125rem 0 0;">${isCamp?'Campanha':'Conjunto'} ${si+1} de ${isCamp?S.nc:S.ns}${S.na>1?' · '+S.na+' anúncios':''}</p>
+      </div>
+      ${copyFromAdset}
     </div>
-    ${copyFromAdset}
+    <div style="display:flex;flex-wrap:wrap;gap:.375rem;margin-top:.625rem;">
+      ${_refChip(_campLbl,_campVal)}
+      ${_refChip(_conjLbl,_conjVal)}
+    </div>
   </div>`;
 
   // ── Botões "Copiar ${isCamp?'da Camp.':'do Conj.'} 1" (só aparecem quando si > 0) ──
